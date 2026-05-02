@@ -1,4 +1,4 @@
-https://drive.google.com/file/d/1zDQlTwDFwJcEePDknNjYRjPrR7AxE2U8/view?usp=sharing
+https://drive.google.com/drive/folders/1TRXSAVK9ZZ6AakuqySFzbO2ToU-UwZiC?usp=sharing
 посилання на білд гри на комп'ютер та на Android
 
 Звіт про розробку гри «Симулятор Маріо»
