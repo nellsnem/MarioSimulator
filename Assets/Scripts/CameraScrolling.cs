@@ -9,12 +9,8 @@ public class CameraScrolling : MonoBehaviour
         if (player != null)
         {
             Vector3 cameraPos = transform.position;
-            
-            // Камера рухається тільки вправо, якщо гравець пройшов далі її центру
-            if (player.position.x > cameraPos.x) {
+            if (player.position.x > cameraPos.x)
                 cameraPos.x = player.position.x;
-            }
-            
             transform.position = cameraPos;
         }
     }

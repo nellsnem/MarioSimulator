@@ -91,6 +91,37 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!1 &3207428896612124080
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1508547545520233109}
+  m_Layer: 0
+  m_Name: Bottom
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1508547545520233109
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3207428896612124080}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.5, y: 1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7649049931490184136}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4248310548155562054
 GameObject:
   m_ObjectHideFlags: 0
@@ -192,7 +223,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7649049931490184136}
   - component: {fileID: 2374865615843491431}
-  m_Layer: 0
+  - component: {fileID: 5533356425103753202}
+  m_Layer: 2
   m_Name: FlagPole
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -215,6 +247,7 @@ Transform:
   - {fileID: 1048470899768419454}
   - {fileID: 6029299426407994896}
   - {fileID: 5349502302664097930}
+  - {fileID: 1508547545520233109}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!61 &2374865615843491431
@@ -263,6 +296,24 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.38943356, y: 10.185017}
   m_EdgeRadius: 0
+--- !u!114 &5533356425103753202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6837516377061570062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d79b93c6753c9164ca98225479e47eab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlagPole
+  flag: {fileID: 6029299426407994896}
+  poleBottom: {fileID: 1508547545520233109}
+  castle: {fileID: 831392554169104838, guid: 87f5840c98d2fc1498c417a57fa49f22, type: 3}
+  speed: 6
+  nextWorld: 1
+  nextStage: 1
 --- !u!1001 &7910350089449214364
 PrefabInstance:
   m_ObjectHideFlags: 0

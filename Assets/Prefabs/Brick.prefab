@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5250021888269538761}
   - component: {fileID: 515751267343473383}
   - component: {fileID: 2063250980439279381}
+  - component: {fileID: -4409351411047065360}
   m_Layer: 0
   m_Name: Brick
   m_TagString: Untagged
@@ -102,7 +103,7 @@ BoxCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 9ba80d8f939e7684b8d4e31080871dd8, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -138,3 +139,18 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &-4409351411047065360
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2057371973664246016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9599cff9aaca4f24ba3f79c094c8d27b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BlockHit
+  item: {fileID: 0}
+  emptyBlock: {fileID: 21300000, guid: 0c057401fbf74454fa3032deae7f0a61, type: 3}
+  maxHits: -1
