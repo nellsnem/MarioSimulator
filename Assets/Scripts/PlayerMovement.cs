@@ -5,9 +5,9 @@ using PinePie.SimpleJoystick;
 
 public class PlayerMovement : MonoBehaviour
 {
-    private Rigidbody2D rb;
-    private Camera mainCamera;
-
+    // ==========================================
+    // 1. PUBLIC FIELDS
+    // ==========================================
     [Header("Movement Settings")]
     public float moveSpeed = 8f;
     public float jumpForce = 12f;
@@ -16,47 +16,135 @@ public class PlayerMovement : MonoBehaviour
     [Header("Status")]
     public bool isGrounded;
     public bool isBig;
-    private bool isFacingRight = true;
-    private bool isDead = false;
-    private float coyoteCounter;
 
-    private bool isInvincible = false;
-    public bool IsDead => isDead;
-
+    // ==========================================
+    // 2. PRIVATE FIELDS
+    // ==========================================
+    private Rigidbody2D rb;
+    private Camera mainCamera;
     private BoxCollider2D playerCollider;
-
-
     private JoystickController joystick;
 
+    private bool isFacingRight = true;
+    private bool isDead = false;
+    private bool isInvincible = false;
+    private bool isStarpower = false;
+    private bool jumpPressed = false;
+    private float coyoteCounter;
+
+    // ==========================================
+    // 3. PROPERTIES
+    // ==========================================
+    public bool IsDead => isDead;
+    public bool IsStarpower => isStarpower;
+
+    // ==========================================
+    // 4. MONOBEHAVIOUR METHODS
+    // ==========================================
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         playerCollider = GetComponent<BoxCollider2D>();
         mainCamera = Camera.main;
+        
+        FindJoystickReference();
     }
 
     private void Update()
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        HandleCoyoteTime();
+        HandleMovement();
+        HandleJump();
+    }
+
+    private void LateUpdate()
+    {
+        if (isDead)
+        {
+            return;  
+        }
+ 
+        HandleCameraBounds();
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        CheckGroundCollision(collision);
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        ResetGroundCollision(collision);
+    }
+
+    // ==========================================
+    // 5. PUBLIC METHODS
+    // ==========================================
+    public void OnJumpButtonPressed()
+    {
+        jumpPressed = true;
+    }
+
+    public void Grow()
+    {
+        isBig = true;
+        playerCollider.size = new Vector2(0.75f, 2f);
+        playerCollider.offset = new Vector2(0f, 0.5f);
+    }
+
+    public void Starpower()
+    {
+        StartCoroutine(StarpowerRoutine());
+    }
+
+    public void Hit()
+    {
+        if (isInvincible || isDead)
+        {
+            return;
+        }
+
+        ProcessHitDamage();
+    }
+
+    public void Die()
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        ProcessDeathSequence();
+    }
+
+    // ==========================================
+    // 6. PRIVATE METHODS
+    // ==========================================
+    private void FindJoystickReference()
     {
         joystick = FindAnyObjectByType<JoystickController>();
         
         if (joystick == null)
         {
-             JoystickController[] allJoysticks = FindObjectsByType<JoystickController>(FindObjectsSortMode.None);
-             foreach (var j in allJoysticks) {
-                 if (j.name == "Joystick") {
-                     joystick = j;
-                     break;
-                 }
-             }
+            JoystickController[] allJoysticks = FindObjectsByType<JoystickController>(FindObjectsSortMode.None);
+            foreach (var currentJoystick in allJoysticks) 
+            {
+                if (currentJoystick.name == "Joystick") 
+                {
+                    joystick = currentJoystick;
+                    break;
+                }
+            }
         }
-        if (isDead) return;
+    }
 
-        float joystickInput = (joystick != null) ? joystick.InputDirection.x : 0f;
-        float keyboardInput = Input.GetAxis("Horizontal");
-        float moveInput = Mathf.Abs(joystickInput) > Mathf.Abs(keyboardInput) ? joystickInput : keyboardInput;
-
-        float targetSpeed = moveInput * moveSpeed;
-
+    private void HandleCoyoteTime()
+    {
         if (isGrounded)
         {
             coyoteCounter = coyoteTime;
@@ -65,36 +153,77 @@ public class PlayerMovement : MonoBehaviour
         {
             coyoteCounter -= Time.deltaTime;
         }
+    }
 
-        float acceleration;
-        if (moveInput != 0)
-        {
-            bool isTurning = (moveInput > 0 && rb.linearVelocity.x < -0.1f) ||
-                             (moveInput < -0.01f && rb.linearVelocity.x > 0.1f);
-            acceleration = isTurning ? moveSpeed * 2f : moveSpeed * 10f;
-        }
-        else
-        {
-            acceleration = moveSpeed * 15f;
-        }
+    private void HandleMovement()
+    {
+        float moveInput = CalculateMoveInput();
+        float targetSpeed = moveInput * moveSpeed;
+        float acceleration = CalculateAcceleration(moveInput);
 
         rb.linearVelocity = new Vector2(
             Mathf.MoveTowards(rb.linearVelocity.x, targetSpeed, acceleration * Time.deltaTime),
             rb.linearVelocity.y
         );
 
-        // Стрибок: кнопка на екрані (jumpPressed) АБО клавіатура
+        Vector3TurnCheck(moveInput);
+    }
+
+    private float CalculateMoveInput()
+    {
+        float joystickInput = (joystick != null) ? joystick.InputDirection.x : 0f;
+        float keyboardInput = Input.GetAxis("Horizontal");
+        
+        return Mathf.Abs(joystickInput) > Mathf.Abs(keyboardInput) ? joystickInput : keyboardInput;
+    }
+
+    private float CalculateAcceleration(float moveInput)
+    {
+        if (moveInput != 0)
+        {
+            bool isTurning = (moveInput > 0 && rb.linearVelocity.x < -0.1f) ||
+                             (moveInput < -0.01f && rb.linearVelocity.x > 0.1f);
+            return isTurning ? moveSpeed * 2f : moveSpeed * 10f;
+        }
+        
+        return moveSpeed * 15f;
+    }
+
+    private void Vector3TurnCheck(float moveInput)
+    {
+        if ((moveInput > 0 && !isFacingRight) || (moveInput < 0 && isFacingRight))
+        {
+            Flip();
+        }
+    }
+
+    private void HandleJump()
+    {
         bool jumpInput = Input.GetButtonDown("Jump") || jumpPressed;
-        jumpPressed = false; // скидаємо після використання
+        jumpPressed = false; 
 
         if (jumpInput && coyoteCounter > 0f)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-            coyoteCounter = 0f;
-            isGrounded = false;
-            if (MusicManager.Instance != null) MusicManager.Instance.PlayJump();
+            ExecuteJump();
         }
 
+        ApplyJumpModifiers();
+    }
+
+    private void ExecuteJump()
+    {
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+        coyoteCounter = 0f;
+        isGrounded = false;
+        
+        if (MusicManager.Instance != null) 
+        {
+            MusicManager.Instance.PlayJump();
+        }
+    }
+
+    private void ApplyJumpModifiers()
+    {
         if (!isGrounded)
         {
             if (rb.linearVelocity.y < 0)
@@ -106,33 +235,33 @@ public class PlayerMovement : MonoBehaviour
                 rb.linearVelocity += Vector2.up * Physics2D.gravity.y * 3f * Time.deltaTime;
             }
         }
-
-        if ((moveInput > 0 && !isFacingRight) || (moveInput < 0 && isFacingRight))
-            Flip();
     }
 
-    // Викликається кнопкою стрибка на екрані (прив'яжи у Inspector)
-    private bool jumpPressed = false;
-    public void OnJumpButtonPressed() => jumpPressed = true;
-
-    private void LateUpdate()
+    private void HandleCameraBounds()
     {
-        if (isDead) return;  
- 
-        if (mainCamera == null) return;
+        if (mainCamera == null) 
+        {
+            return;
+        }
 
         Vector3 viewPos = transform.position;
         Vector3 leftEdge = mainCamera.ScreenToWorldPoint(Vector3.zero);
-
-       
         float leftLimit = leftEdge.x;
+
         if (viewPos.x < leftLimit)
         {
-            viewPos.x = leftLimit;
-            transform.position = viewPos;
+            RestrictPlayerToLeft(viewPos, leftLimit);
+        }
+    }
+
+    private void RestrictPlayerToLeft(Vector3 viewPos, float leftLimit)
+    {
+        viewPos.x = leftLimit;
+        transform.position = viewPos;
  
-            if (rb.linearVelocity.x < 0)
-                rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+        if (rb.linearVelocity.x < 0)
+        {
+            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
         }
     }
 
@@ -143,41 +272,29 @@ public class PlayerMovement : MonoBehaviour
         playerCollider.offset = new Vector2(0f, 0f);
     }
 
-    private IEnumerator InvincibilityFrames()
+    private void ProcessHitDamage()
     {
-        
-        isInvincible = true;
-
-        SpriteRenderer sr = GetComponent<PlayerVisuals>() != null
-            ? GetComponent<PlayerVisuals>().spriteRenderer
-            : GetComponent<SpriteRenderer>();
-
-        float duration = 2f;
-        float blinkInterval = 0.1f;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
+        if (isBig)
         {
-            sr.enabled = !sr.enabled;
-            yield return new WaitForSeconds(blinkInterval);
-            elapsed += blinkInterval;
+            Shrink();
+            StartCoroutine(InvincibilityFrames());
         }
-
-        sr.enabled = true;
-        isInvincible = false;
+        else
+        {
+            Die();
+        }
     }
 
-    public void Die()
+    private void ProcessDeathSequence()
     {
-        if (isDead) return;
         isDead = true;
-        if (MusicManager.Instance != null) MusicManager.Instance.PlayDeath();
+        if (MusicManager.Instance != null) 
+        {
+            MusicManager.Instance.PlayDeath();
+        }
 
-        foreach (Collider2D col in GetComponents<Collider2D>())
-            col.enabled = false;
-
-        if (Camera.main != null && Camera.main.GetComponent<CameraScrolling>() != null)
-            Camera.main.GetComponent<CameraScrolling>().enabled = false;
+        DisableColliders();
+        DisableCameraScrolling();
 
         rb.gravityScale = 0f;
         rb.linearVelocity = Vector2.zero;
@@ -185,20 +302,36 @@ public class PlayerMovement : MonoBehaviour
         StartCoroutine(DeathJump());
 
         if (GameManager.Instance != null)
+        {
             GameManager.Instance.ResetLevel(3f);
+        }
     }
 
-    private IEnumerator DeathJump()
+    private void DisableColliders()
     {
-        yield return null;
-        rb.gravityScale = 1f;
-        rb.linearVelocity = new Vector2(0f, 6f);
-        yield return new WaitUntil(() => rb.linearVelocity.y <= 0f);
-        rb.bodyType = RigidbodyType2D.Kinematic;
-        rb.linearVelocity = new Vector2(0f, -8f);
+        foreach (Collider2D col in GetComponents<Collider2D>())
+        {
+            col.enabled = false;
+        }
     }
 
-    private void OnCollisionStay2D(Collision2D collision)
+    private void DisableCameraScrolling()
+    {
+        if (Camera.main != null && Camera.main.GetComponent<CameraScrolling>() != null)
+        {
+            Camera.main.GetComponent<CameraScrolling>().enabled = false;
+        }
+    }
+
+    private void Flip()
+    {
+        isFacingRight = !isFacingRight;
+        Vector3 scaleVector = transform.localScale;
+        scaleVector.x *= -1;
+        transform.localScale = scaleVector;
+    }
+
+    private void CheckGroundCollision(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
         {
@@ -213,63 +346,64 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private void OnCollisionExit2D(Collision2D collision)
+    private void ResetGroundCollision(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
+        {
             isGrounded = false;
-    }
-
-    private void Flip()
-    {
-        isFacingRight = !isFacingRight;
-        Vector3 s = transform.localScale;
-        s.x *= -1;
-        transform.localScale = s;
-    }
-
-    public void Grow()
-    {
-        isBig = true;
-        playerCollider.size = new Vector2(0.75f, 2f);
-        playerCollider.offset = new Vector2(0f, 0.5f);
-    }
-
-    private bool isStarpower = false;
-    public bool IsStarpower => isStarpower;
-
-    public void Starpower()
-    {
-        StartCoroutine(StarpowerRoutine());
-    }
-
-   private IEnumerator StarpowerRoutine()
-{
-    isStarpower = true; 
-    isInvincible = true; 
- 
-    moveSpeed = 15f; 
-    jumpForce = 22f; 
-
-    yield return new WaitForSeconds(5f); 
- 
-    moveSpeed = 8f; 
-    jumpForce = 20f; 
-
-    isInvincible = false; 
-    isStarpower = false; 
-}
-
-    public void Hit()
-    {
-        if (isInvincible || isDead) return;
-        if (isBig)
-        {
-            Shrink();
-            StartCoroutine(InvincibilityFrames());
         }
-        else
+    }
+
+    // ==========================================
+    // 7. COROUTINES
+    // ==========================================
+    private IEnumerator InvincibilityFrames()
+    {
+        isInvincible = true;
+
+        SpriteRenderer spriteRendererComponent = GetComponent<PlayerVisuals>() != null
+            ? GetComponent<PlayerVisuals>().spriteRenderer
+            : GetComponent<SpriteRenderer>();
+
+        float duration = 2f;
+        float blinkInterval = 0.1f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
         {
-            Die();
+            spriteRendererComponent.enabled = !spriteRendererComponent.enabled;
+            yield return new WaitForSeconds(blinkInterval);
+            elapsed += blinkInterval;
         }
+
+        spriteRendererComponent.enabled = true;
+        isInvincible = false;
+    }
+
+    private IEnumerator DeathJump()
+    {
+        yield return null;
+        rb.gravityScale = 1f;
+        rb.linearVelocity = new Vector2(0f, 6f);
+        yield return new WaitUntil(() => rb.linearVelocity.y <= 0f);
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.linearVelocity = new Vector2(0f, -8f);
+    }
+
+    private IEnumerator StarpowerRoutine()
+    {
+        isStarpower = true; 
+        isInvincible = true; 
+ 
+        moveSpeed = 15f; 
+        jumpForce = 22f; 
+
+        yield return new WaitForSeconds(5f); 
+ 
+        moveSpeed = 8f; 
+        jumpForce = 20f; 
+
+        isInvincible = false; 
+        isStarpower = false; 
     }
 }
