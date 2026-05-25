@@ -1,10 +1,11 @@
 using UnityEngine;
 
+
 public class PlayerVisuals : MonoBehaviour
 {
-    private PlayerMovement movement;
-    private Rigidbody2D rb;
-
+    // ==========================================
+    // 1. PUBLIC FIELDS
+    // ==========================================
     [Header("References")]
     public SpriteRenderer spriteRenderer;
 
@@ -19,75 +20,96 @@ public class PlayerVisuals : MonoBehaviour
     public Sprite bigJump;
     public Sprite[] bigRun;
 
-    private int runFrame;
-    private float frameTimer;
- 
-    private int airFrames = 0;
+    // ==========================================
+    // 2. PRIVATE FIELDS
+    // ==========================================
+    private PlayerMovement _movement;
+    private Rigidbody2D _rb;
 
-    private Color[] starColors = new Color[]
+    private int _runFrame;
+    private float _frameTimer;
+    private int _airFrames = 0;
+
+    private int _colorIndex = 0;
+    private float _colorTimer = 0f;
+
+    // ==========================================
+    // 3. CONSTANTS
+    // ==========================================
+    private const float COLOR_INTERVAL = 0.08f;
+    private const float RUN_FRAME_INTERVAL = 0.1f;
+    private const int AIR_FRAME_THRESHOLD = 3;
+
+    private static readonly Color[] StarColors = new Color[]
     {
         Color.red, Color.yellow, Color.green,
         Color.cyan, Color.magenta, Color.white,
     };
-    private int colorIndex = 0;
-    private float colorTimer = 0f;
-    private float colorInterval = 0.08f;
 
+    // ==========================================
+    // 4. MONOBEHAVIOUR METHODS
+    // ==========================================
     private void Awake()
     {
-        movement = GetComponent<PlayerMovement>();
-        rb = GetComponent<Rigidbody2D>();
+        _movement = GetComponent<PlayerMovement>();
+        _rb       = GetComponent<Rigidbody2D>();
     }
 
     private void LateUpdate()
     {
-        if (movement.IsDead)
+        if (_movement.IsDead)
         {
-            spriteRenderer.sprite = smallDeath;
-            spriteRenderer.color = Color.white;
+            ShowDeathSprite();
             return;
         }
- 
-        if (movement.IsStarpower)
+
+        UpdateStarpowerColor();
+        AnimatePlayer();
+    }
+
+    // ==========================================
+    // 5. PRIVATE METHODS
+    // ==========================================
+    private void ShowDeathSprite()
+    {
+        spriteRenderer.sprite = smallDeath;
+        spriteRenderer.color  = Color.white;
+    }
+
+    private void UpdateStarpowerColor()
+    {
+        if (_movement.IsStarpower)
         {
-            colorTimer += Time.deltaTime;
-            if (colorTimer >= colorInterval)
+            _colorTimer += Time.deltaTime;
+            if (_colorTimer >= COLOR_INTERVAL)
             {
-                colorTimer = 0f;
-                colorIndex = (colorIndex + 1) % starColors.Length;
-                spriteRenderer.color = starColors[colorIndex];
+                _colorTimer  = 0f;
+                _colorIndex  = (_colorIndex + 1) % StarColors.Length;
+                spriteRenderer.color = StarColors[_colorIndex];
             }
         }
         else
         {
             spriteRenderer.color = Color.white;
         }
-
-        AnimatePlayer();
     }
 
     private void AnimatePlayer()
     {
-        if (spriteRenderer == null) return;
+        if (spriteRenderer == null)
+        {
+            return;
+        }
 
-        Sprite currentIdle = movement.isBig ? bigIdle : smallIdle;
-        Sprite currentJump = movement.isBig ? bigJump : smallJump;
-        Sprite[] currentRun = movement.isBig ? bigRun : smallRun;
+        Sprite currentIdle  = _movement.isBig ? bigIdle  : smallIdle;
+        Sprite currentJump  = _movement.isBig ? bigJump  : smallJump;
+        Sprite[] currentRun = _movement.isBig ? bigRun   : smallRun;
         Sprite currentSlide = (currentRun != null && currentRun.Length > 3) ? currentRun[3] : currentJump;
- 
-        if (!movement.isGrounded)
-        {
-            airFrames++;
-        }
-        else
-        {
-            airFrames = 0;
-        }
- 
-        bool isInAir = !movement.isGrounded && airFrames > 3;
 
-        bool isSliding = (rb.linearVelocity.x > 0.1f && Input.GetAxis("Horizontal") < 0) ||
-                         (rb.linearVelocity.x < -0.1f && Input.GetAxis("Horizontal") > 0);
+        UpdateAirFrames();
+
+        bool isInAir   = !_movement.isGrounded && _airFrames > AIR_FRAME_THRESHOLD;
+        bool isSliding = IsSliding();
 
         if (isInAir)
         {
@@ -97,22 +119,47 @@ public class PlayerVisuals : MonoBehaviour
         {
             spriteRenderer.sprite = currentSlide;
         }
-        else if (Mathf.Abs(rb.linearVelocity.x) > 0.1f)
+        else if (Mathf.Abs(_rb.linearVelocity.x) > 0.1f)
         {
-            frameTimer += Time.deltaTime;
-            if (frameTimer >= 0.1f)
-            {
-                frameTimer = 0;
-                runFrame = (runFrame + 1) % 3;
-
-                if (currentRun != null && currentRun.Length > 0)
-                    spriteRenderer.sprite = currentRun[runFrame % currentRun.Length];
-            }
+            AdvanceRunFrame(currentRun);
         }
         else
         {
             spriteRenderer.sprite = currentIdle;
-            runFrame = 0;  
+            _runFrame = 0;
+        }
+    }
+
+    private void UpdateAirFrames()
+    {
+        if (!_movement.isGrounded)
+        {
+            _airFrames++;
+        }
+        else
+        {
+            _airFrames = 0;
+        }
+    }
+
+    private bool IsSliding()
+    {
+        return (_rb.linearVelocity.x > 0.1f  && Input.GetAxis("Horizontal") < 0) ||
+               (_rb.linearVelocity.x < -0.1f && Input.GetAxis("Horizontal") > 0);
+    }
+
+    private void AdvanceRunFrame(Sprite[] currentRun)
+    {
+        _frameTimer += Time.deltaTime;
+        if (_frameTimer >= RUN_FRAME_INTERVAL)
+        {
+            _frameTimer = 0;
+            _runFrame   = (_runFrame + 1) % 3;
+
+            if (currentRun != null && currentRun.Length > 0)
+            {
+                spriteRenderer.sprite = currentRun[_runFrame % currentRun.Length];
+            }
         }
     }
 }
