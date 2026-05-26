@@ -1,18 +1,28 @@
 using UnityEngine;
 
+ 
 [RequireComponent(typeof(SpriteRenderer))]
 public class AnimatedSprite : MonoBehaviour
 {
+    // ==========================================
+    // 1. PUBLIC FIELDS
+    // ==========================================
     [Header("Animation Settings")]
     public Sprite[] sprites;
     public float framerate = 0.16f;
 
-    private SpriteRenderer spriteRenderer;
-    private int frame;
+    // ==========================================
+    // 2. PRIVATE FIELDS
+    // ==========================================
+    private SpriteRenderer _spriteRenderer;
+    private int _frame;
 
+    // ==========================================
+    // 3. MONOBEHAVIOUR METHODS
+    // ==========================================
     private void Awake()
     {
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        _spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     private void OnEnable()
@@ -25,14 +35,21 @@ public class AnimatedSprite : MonoBehaviour
         CancelInvoke();
     }
 
+    // ==========================================
+    // 4. PRIVATE METHODS
+    // ==========================================
     private void Animate()
     {
-        frame++;
+        _frame++;
 
-        if (frame >= sprites.Length) frame = 0;
+        if (_frame >= sprites.Length)
+        {
+            _frame = 0;
+        }
 
-        if (frame >= 0 && frame < sprites.Length) {
-            spriteRenderer.sprite = sprites[frame];
+        if (_frame >= 0 && _frame < sprites.Length)
+        {
+            _spriteRenderer.sprite = sprites[_frame];
         }
     }
 }
