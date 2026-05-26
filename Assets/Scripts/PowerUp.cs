@@ -1,56 +1,109 @@
 using UnityEngine;
 
+ 
 public class PowerUp : MonoBehaviour
-{ 
-    public enum Type
-    {
-        Coin,            
-        ExtraLife,       
-        MagicMushroom,   
-        Starpower,      
-    } 
-    public Type type;
-
-private void OnTriggerEnter2D(Collider2D other)
 {
-    
-    if (other.CompareTag("Player")) 
+    // ==========================================
+    // 1. ENUMS
+    // ==========================================
+    public enum PowerUpType
     {
-         
+        Coin,
+        ExtraLife,
+        MagicMushroom,
+        Starpower,
+    }
+
+    // ==========================================
+    // 2. PUBLIC FIELDS
+    // ==========================================
+    public PowerUpType type;
+
+    // ==========================================
+    // 3. MONOBEHAVIOUR METHODS
+    // ==========================================
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (!other.CompareTag("Player"))
+        {
+            return;
+        }
+
         if (other.TryGetComponent(out PlayerMovement player))
         {
-            Collect(player);  
+            Collect(player);
         }
     }
-} 
-    private void Collect(PlayerMovement  player)
+
+    // ==========================================
+    // 4. PRIVATE METHODS
+    // ==========================================
+    private void Collect(PlayerMovement player)
     {
-        if (TryGetComponent(out Collider2D col)) {
-        col.enabled = false; 
+        DisableCollider();
+        ApplyEffect(player);
+        Destroy(gameObject);
     }
+
+    private void DisableCollider()
+    {
+        if (TryGetComponent(out Collider2D col))
+        {
+            col.enabled = false;
+        }
+    }
+
+    private void ApplyEffect(PlayerMovement player)
+    {
         switch (type)
         {
-            case Type.Coin:
-                GameManager.Instance.AddCoin();  
+            case PowerUpType.Coin:
+                CollectCoin();
                 break;
 
-            case Type.ExtraLife:
-                GameManager.Instance.AddLife();
-                if (MusicManager.Instance != null) MusicManager.Instance.PlayLife();
+            case PowerUpType.ExtraLife:
+                CollectExtraLife();
                 break;
 
-            case Type.MagicMushroom:
-                GameManager.Instance.AddScore(150);
-                player.Grow();
-                if (MusicManager.Instance != null) MusicManager.Instance.PlayGrow();
+            case PowerUpType.MagicMushroom:
+                CollectMushroom(player);
                 break;
 
-            case Type.Starpower:
-                GameManager.Instance.AddScore(500);
-                player.Starpower();
+            case PowerUpType.Starpower:
+                CollectStarpower(player);
                 break;
         }
- 
-        Destroy(gameObject);
+    }
+
+    private void CollectCoin()
+    {
+        GameManager.Instance.AddCoin();
+    }
+
+    private void CollectExtraLife()
+    {
+        GameManager.Instance.AddLife();
+
+        if (MusicManager.Instance != null)
+        {
+            MusicManager.Instance.PlayLife();
+        }
+    }
+
+    private void CollectMushroom(PlayerMovement player)
+    {
+        GameManager.Instance.AddScore(150);
+        player.Grow();
+
+        if (MusicManager.Instance != null)
+        {
+            MusicManager.Instance.PlayGrow();
+        }
+    }
+
+    private void CollectStarpower(PlayerMovement player)
+    {
+        GameManager.Instance.AddScore(500);
+        player.Starpower();
     }
 }
