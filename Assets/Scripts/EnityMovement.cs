@@ -1,43 +1,82 @@
 using UnityEngine;
 
+ 
 [RequireComponent(typeof(Rigidbody2D))]
 public class EntityMovement : MonoBehaviour
 {
+    // ==========================================
+    // 1. PUBLIC FIELDS
+    // ==========================================
     [Header("Movement Settings")]
-    public float speed = 1f;
+    public float speed     = 1f;
     public Vector2 direction = Vector2.left;
 
-    private Rigidbody2D rb;
-    private Vector2 velocity;
+    // ==========================================
+    // 2. PRIVATE FIELDS
+    // ==========================================
+    private Rigidbody2D _rb;
+    private Vector2 _velocity;
 
+    // ==========================================
+    // 3. MONOBEHAVIOUR METHODS
+    // ==========================================
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
-        enabled = false; 
+        _rb     = GetComponent<Rigidbody2D>();
+        enabled = false;
     }
 
-    private void OnBecameVisible() { enabled = true; }
-    private void OnBecameInvisible() { enabled = false; }
-    private void OnEnable() { rb.WakeUp(); }
+    private void OnBecameVisible()
+    {
+        enabled = true;
+    }
 
-    private void OnDisable() 
-    { 
-        rb.linearVelocity = Vector2.zero; 
-        rb.Sleep(); 
+    private void OnBecameInvisible()
+    {
+        enabled = false;
+    }
+
+    private void OnEnable()
+    {
+        _rb.WakeUp();
+    }
+
+    private void OnDisable()
+    {
+        _rb.linearVelocity = Vector2.zero;
+        _rb.Sleep();
     }
 
     private void FixedUpdate()
     {
-        velocity.x = direction.x * speed;
-        velocity.y += Physics2D.gravity.y * Time.fixedDeltaTime;
+        ApplyMovement();
+        ClampGroundVelocity();
+        CheckWallCollision();
+    }
 
-        rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+    // ==========================================
+    // 4. PRIVATE METHODS
+    // ==========================================
+    private void ApplyMovement()
+    {
+        _velocity.x  = direction.x * speed;
+        _velocity.y += Physics2D.gravity.y * Time.fixedDeltaTime;
 
-        if (rb.Raycast(Vector2.down)) {
-            velocity.y = Mathf.Max(velocity.y, 0f);
+        _rb.MovePosition(_rb.position + _velocity * Time.fixedDeltaTime);
+    }
+
+    private void ClampGroundVelocity()
+    {
+        if (_rb.Raycast(Vector2.down))
+        {
+            _velocity.y = Mathf.Max(_velocity.y, 0f);
         }
+    }
 
-        if (rb.Raycast(direction)) {
+    private void CheckWallCollision()
+    {
+        if (_rb.Raycast(direction))
+        {
             direction = -direction;
         }
     }
