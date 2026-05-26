@@ -13,6 +13,9 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce = 12f;
     public float coyoteTime = 0.2f;
 
+    [Header("Player Settings")]
+    public int playerIndex = 1;
+
     [Header("Status")]
     public bool isGrounded;
     public bool isBig;
@@ -32,10 +35,20 @@ public class PlayerMovement : MonoBehaviour
     private bool _isJumpPressed = false;
     private float _coyoteCounter;
 
+    // Player 1 keys
+    private const KeyCode MoveLeftKeyP1  = KeyCode.A;
+    private const KeyCode MoveRightKeyP1 = KeyCode.D;
+    private const KeyCode JumpKeyP1      = KeyCode.W;
+
+    // Player 2 keys
+    private const KeyCode MoveLeftKeyP2  = KeyCode.LeftArrow;
+    private const KeyCode MoveRightKeyP2 = KeyCode.RightArrow;
+    private const KeyCode JumpKeyP2      = KeyCode.UpArrow;
+
     // ==========================================
     // 3. PROPERTIES
     // ==========================================
-    public bool IsDead => _isDead;
+    public bool IsDead      => _isDead;
     public bool IsStarpower => _isStarpower;
 
     // ==========================================
@@ -43,9 +56,9 @@ public class PlayerMovement : MonoBehaviour
     // ==========================================
     private void Awake()
     {
-        _rb = GetComponent<Rigidbody2D>();
+        _rb             = GetComponent<Rigidbody2D>();
         _playerCollider = GetComponent<BoxCollider2D>();
-        _mainCamera = Camera.main;
+        _mainCamera     = Camera.main;
 
         FindJoystickReference();
     }
@@ -92,8 +105,8 @@ public class PlayerMovement : MonoBehaviour
 
     public void Grow()
     {
-        isBig = true;
-        _playerCollider.size = new Vector2(0.75f, 2f);
+        isBig                   = true;
+        _playerCollider.size   = new Vector2(0.75f, 2f);
         _playerCollider.offset = new Vector2(0f, 0.5f);
     }
 
@@ -157,7 +170,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleMovement()
     {
-        float moveInput = CalculateMoveInput();
+        float moveInput   = CalculateMoveInput();
         float targetSpeed = moveInput * moveSpeed;
         float acceleration = CalculateAcceleration(moveInput);
 
@@ -171,10 +184,35 @@ public class PlayerMovement : MonoBehaviour
 
     private float CalculateMoveInput()
     {
-        float joystickInput = (_joystick != null) ? _joystick.InputDirection.x : 0f;
-        float keyboardInput = Input.GetAxis("Horizontal");
+        float joystickInput  = (_joystick != null) ? _joystick.InputDirection.x : 0f;
+        float keyboardInput  = GetHorizontalInput();
 
         return Mathf.Abs(joystickInput) > Mathf.Abs(keyboardInput) ? joystickInput : keyboardInput;
+    }
+
+    private float GetHorizontalInput()
+    {
+        if (playerIndex == 2)
+        {
+            return GetRawAxis(MoveLeftKeyP2, MoveRightKeyP2);
+        }
+
+        return GetRawAxis(MoveLeftKeyP1, MoveRightKeyP1);
+    }
+
+    private float GetRawAxis(KeyCode leftKey, KeyCode rightKey)
+    {
+        if (Input.GetKey(leftKey))
+        {
+            return -1f;
+        }
+
+        if (Input.GetKey(rightKey))
+        {
+            return 1f;
+        }
+
+        return 0f;
     }
 
     private float CalculateAcceleration(float moveInput)
@@ -199,7 +237,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleJump()
     {
-        bool jumpInput = Input.GetButtonDown("Jump") || _isJumpPressed;
+        bool jumpInput = GetJumpInput() || _isJumpPressed;
         _isJumpPressed = false;
 
         if (jumpInput && _coyoteCounter > 0f)
@@ -210,11 +248,21 @@ public class PlayerMovement : MonoBehaviour
         ApplyJumpModifiers();
     }
 
+    private bool GetJumpInput()
+    {
+        if (playerIndex == 2)
+        {
+            return Input.GetKeyDown(JumpKeyP2);
+        }
+
+        return Input.GetKeyDown(JumpKeyP1);
+    }
+
     private void ExecuteJump()
     {
         _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, jumpForce);
-        _coyoteCounter = 0f;
-        isGrounded = false;
+        _coyoteCounter     = 0f;
+        isGrounded         = false;
 
         if (MusicManager.Instance != null)
         {
@@ -226,15 +274,28 @@ public class PlayerMovement : MonoBehaviour
     {
         if (!isGrounded)
         {
-            if (_rb.linearVelocity.y < 0)
+            bool isFalling      = _rb.linearVelocity.y < 0;
+            bool isRisingNoHold = _rb.linearVelocity.y > 0 && !IsJumpHeld();
+
+            if (isFalling)
             {
                 _rb.linearVelocity += Vector2.up * Physics2D.gravity.y * 2f * Time.deltaTime;
             }
-            else if (_rb.linearVelocity.y > 0 && !Input.GetButton("Jump"))
+            else if (isRisingNoHold)
             {
                 _rb.linearVelocity += Vector2.up * Physics2D.gravity.y * 3f * Time.deltaTime;
             }
         }
+    }
+
+    private bool IsJumpHeld()
+    {
+        if (playerIndex == 2)
+        {
+            return Input.GetKey(JumpKeyP2);
+        }
+
+        return Input.GetKey(JumpKeyP1);
     }
 
     private void HandleCameraBounds()
@@ -244,9 +305,9 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        Vector3 viewPos = transform.position;
+        Vector3 viewPos  = transform.position;
         Vector3 leftEdge = _mainCamera.ScreenToWorldPoint(Vector3.zero);
-        float leftLimit = leftEdge.x;
+        float leftLimit  = leftEdge.x;
 
         if (viewPos.x < leftLimit)
         {
@@ -256,7 +317,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void RestrictPlayerToLeft(Vector3 viewPos, float leftLimit)
     {
-        viewPos.x = leftLimit;
+        viewPos.x         = leftLimit;
         transform.position = viewPos;
 
         if (_rb.linearVelocity.x < 0)
@@ -267,8 +328,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void Shrink()
     {
-        isBig = false;
-        _playerCollider.size = new Vector2(0.75f, 1f);
+        isBig                   = false;
+        _playerCollider.size   = new Vector2(0.75f, 1f);
         _playerCollider.offset = new Vector2(0f, 0f);
     }
 
@@ -288,6 +349,7 @@ public class PlayerMovement : MonoBehaviour
     private void ProcessDeathSequence()
     {
         _isDead = true;
+
         if (MusicManager.Instance != null)
         {
             MusicManager.Instance.PlayDeath();
@@ -296,7 +358,7 @@ public class PlayerMovement : MonoBehaviour
         DisableColliders();
         DisableCameraScrolling();
 
-        _rb.gravityScale = 0f;
+        _rb.gravityScale   = 0f;
         _rb.linearVelocity = Vector2.zero;
 
         StartCoroutine(DeathJump());
@@ -317,17 +379,21 @@ public class PlayerMovement : MonoBehaviour
 
     private void DisableCameraScrolling()
     {
-        if (Camera.main != null && Camera.main.GetComponent<CameraScrolling>() != null)
+        CameraScrolling cameraScrolling = Camera.main != null
+            ? Camera.main.GetComponent<CameraScrolling>()
+            : null;
+
+        if (cameraScrolling != null)
         {
-            Camera.main.GetComponent<CameraScrolling>().enabled = false;
+            cameraScrolling.enabled = false;
         }
     }
 
     private void Flip()
     {
-        _isFacingRight = !_isFacingRight;
+        _isFacingRight    = !_isFacingRight;
         Vector3 scaleVector = transform.localScale;
-        scaleVector.x *= -1;
+        scaleVector.x      *= -1;
         transform.localScale = scaleVector;
     }
 
@@ -365,9 +431,9 @@ public class PlayerMovement : MonoBehaviour
             ? GetComponent<PlayerVisuals>().spriteRenderer
             : GetComponent<SpriteRenderer>();
 
-        float duration = 2f;
+        float duration      = 2f;
         float blinkInterval = 0.1f;
-        float elapsed = 0f;
+        float elapsed       = 0f;
 
         while (elapsed < duration)
         {
@@ -383,27 +449,27 @@ public class PlayerMovement : MonoBehaviour
     private IEnumerator DeathJump()
     {
         yield return null;
-        _rb.gravityScale = 1f;
+        _rb.gravityScale   = 1f;
         _rb.linearVelocity = new Vector2(0f, 6f);
         yield return new WaitUntil(() => _rb.linearVelocity.y <= 0f);
-        _rb.bodyType = RigidbodyType2D.Kinematic;
+        _rb.bodyType       = RigidbodyType2D.Kinematic;
         _rb.linearVelocity = new Vector2(0f, -8f);
     }
 
     private IEnumerator StarpowerRoutine()
     {
-        _isStarpower = true;
+        _isStarpower  = true;
         _isInvincible = true;
 
-        moveSpeed = 15f;
-        jumpForce = 22f;
+        moveSpeed  = 15f;
+        jumpForce  = 22f;
 
         yield return new WaitForSeconds(5f);
 
-        moveSpeed = 8f;
-        jumpForce = 20f;
+        moveSpeed  = 8f;
+        jumpForce  = 20f;
 
         _isInvincible = false;
-        _isStarpower = false;
+        _isStarpower  = false;
     }
 }
