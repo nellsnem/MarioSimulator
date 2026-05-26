@@ -1,18 +1,24 @@
 using UnityEngine;
-
+ 
 public class DontDestroyCanvas : MonoBehaviour
 {
-    private static DontDestroyCanvas instance;
+    // ==========================================
+    // 1. PRIVATE FIELDS
+    // ==========================================
+    private static DontDestroyCanvas _instance;
 
+    // ==========================================
+    // 2. MONOBEHAVIOUR METHODS
+    // ==========================================
     private void Awake()
     {
-        if (instance != null)
+        if (_instance != null)
         {
             Destroy(gameObject);
             return;
         }
 
-        instance = this;
+        _instance = this;
         DontDestroyOnLoad(gameObject);
     }
 }
