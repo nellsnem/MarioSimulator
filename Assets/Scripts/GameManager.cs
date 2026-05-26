@@ -3,25 +3,26 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using TMPro;
- 
+
 [DefaultExecutionOrder(-1)]
 public class GameManager : MonoBehaviour
 {
     // ==========================================
-    // 1. PUBLIC FIELDS & PROPERTIES
+    // 1. PUBLIC PROPERTIES
     // ==========================================
     public static GameManager Instance { get; private set; }
 
-    public int lives { get; private set; } = 3;
-    public int coins { get; private set; } = 0;
-    public int score { get; private set; } = 0;
-    public int time  { get; set; } = 150;
+    public int lives       { get; private set; } = 3;
+    public int coins       { get; private set; } = 0;
+    public int score       { get; private set; } = 0;
+    public int time        { get; set; }         = 150;
+    public int PlayerCount { get; private set; } = 1;
 
     // ==========================================
     // 2. PRIVATE FIELDS
     // ==========================================
-    private bool _levelComplete  = false;
-    private bool _isFirstLaunch  = true;
+    private bool _levelComplete = false;
+    private bool _isFirstLaunch = true;
 
     private GameObject _startPanel;
     private GameObject _victoryPanel;
@@ -33,8 +34,8 @@ public class GameManager : MonoBehaviour
     // ==========================================
     // 3. CONSTANTS
     // ==========================================
-    private const int DEFAULT_LIVES = 3;
-    private const int DEFAULT_TIME = 150;
+    private const int DEFAULT_LIVES   = 3;
+    private const int DEFAULT_TIME    = 150;
     private const int NAME_CHAR_LIMIT = 5;
 
     // ==========================================
@@ -126,10 +127,9 @@ public class GameManager : MonoBehaviour
             MusicManager.Instance.PlayVictory();
         }
 
-        LeaderboardManager lb = FindAnyObjectByType<LeaderboardManager>();
-        if (lb != null)
+        if (LeaderboardManager.Instance != null)
         {
-            lb.SaveScore(_playerName, score);
+            LeaderboardManager.Instance.SaveScore(_playerName, score);
         }
 
         if (_victoryPanel != null)
@@ -180,22 +180,20 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void StartGame()
+    /// <summary>
+    /// Called by "1 Player" button on StartPanel.
+    /// </summary>
+    public void StartOnePlayerGame()
     {
-        _playerName = ((_nameInput != null) && !string.IsNullOrWhiteSpace(_nameInput.text))
-            ? _nameInput.text.Trim()
-            : "Mario";
+        StartGame(playerCount: 1);
+    }
 
-        ResetStats();
-        _isFirstLaunch = false;
-
-        if (_startPanel != null)
-        {
-            _startPanel.SetActive(false);
-        }
-
-        Time.timeScale = 1f;
-        StartGameLogic();
+    /// <summary>
+    /// Called by "2 Players" button on StartPanel.
+    /// </summary>
+    public void StartTwoPlayerGame()
+    {
+        StartGame(playerCount: 2);
     }
 
     public void RestartGame()
@@ -215,7 +213,7 @@ public class GameManager : MonoBehaviour
         CancelInvoke(nameof(TickTime));
         ResetStats();
         _isFirstLaunch = true;
-        Time.timeScale = 0f;
+        Time.timeScale  = 0f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
@@ -237,6 +235,30 @@ public class GameManager : MonoBehaviour
     // ==========================================
     // 6. PRIVATE METHODS
     // ==========================================
+    private void StartGame(int playerCount)
+    {
+        _playerName = ((_nameInput != null) && !string.IsNullOrWhiteSpace(_nameInput.text))
+            ? _nameInput.text.Trim()
+            : "Player";
+
+        PlayerCount    = playerCount;
+        _isFirstLaunch = false;
+
+        PlayerPrefs.SetInt("PlayerCount", PlayerCount);
+        PlayerPrefs.SetString("PlayerName", _playerName);
+        PlayerPrefs.Save();
+
+        ResetStats();
+
+        if (_startPanel != null)
+        {
+            _startPanel.SetActive(false);
+        }
+
+        Time.timeScale = 1f;
+        StartGameLogic();
+    }
+
     private void FindPanels()
     {
         _victoryPanel  = null;
@@ -248,7 +270,7 @@ public class GameManager : MonoBehaviour
 
         foreach (GameObject go in allObjects)
         {
-            if (go.scene.name == null || go.scene.name == "")
+            if (string.IsNullOrEmpty(go.scene.name))
             {
                 continue;
             }
@@ -292,7 +314,8 @@ public class GameManager : MonoBehaviour
         if (_startPanel != null)
         {
             _startPanel.SetActive(_isFirstLaunch);
-            BindButton(_startPanel, "StartClickButton", StartGame);
+            BindButton(_startPanel, "OnePlayerButton",  StartOnePlayerGame);
+            BindButton(_startPanel, "TwoPlayersButton", StartTwoPlayerGame);
             BindButton(_startPanel, "ExitClickButton",  QuitGame);
         }
 
@@ -347,10 +370,9 @@ public class GameManager : MonoBehaviour
             MusicManager.Instance.PlayDeath();
         }
 
-        LeaderboardManager lb = FindAnyObjectByType<LeaderboardManager>();
-        if (lb != null)
+        if (LeaderboardManager.Instance != null)
         {
-            lb.SaveScore(_playerName, score);
+            LeaderboardManager.Instance.SaveScore(_playerName, score);
         }
 
         if (_gameOverPanel != null)

@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
- 
+
 public class FlagPole : MonoBehaviour
 {
     // ==========================================
@@ -18,21 +18,21 @@ public class FlagPole : MonoBehaviour
     // ==========================================
     // 2. PRIVATE FIELDS
     // ==========================================
-    private bool _triggered = false;
+    private bool _isTriggered = false;
 
     // ==========================================
     // 3. MONOBEHAVIOUR METHODS
     // ==========================================
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (_triggered)
+        if (_isTriggered)
         {
             return;
         }
 
         if (other.CompareTag("Player") && other.TryGetComponent(out PlayerMovement player))
         {
-            _triggered = true;
+            _isTriggered = true;
 
             if (GameManager.Instance != null)
             {

@@ -20,9 +20,9 @@ public class LeaderboardManager : MonoBehaviour
     // ==========================================
     // 3. CONSTANTS
     // ==========================================
-    private const int TopCount = 3;
+    private const int TOP_COUNT = 3;
 
-    private static readonly string[] LeaderTextNames = { "top1", "top2", "top3" };
+    private static readonly string[] _leaderTextNames = { "top1", "top2", "top3" };
 
     // ==========================================
     // 4. MONOBEHAVIOUR METHODS
@@ -57,7 +57,7 @@ public class LeaderboardManager : MonoBehaviour
         scores.Add(new LeaderboardEntry(name, score));
 
         // Sort descending by score and keep top entries only
-        var topScores = scores.OrderByDescending(s => s.score).Take(TopCount).ToList();
+        var topScores = scores.OrderByDescending(s => s.score).Take(TOP_COUNT).ToList();
 
         string json = JsonUtility.ToJson(new SerializationWrapper<LeaderboardEntry> { items = topScores });
         PlayerPrefs.SetString("LeaderboardData", json);
@@ -99,14 +99,14 @@ public class LeaderboardManager : MonoBehaviour
 
     private void FindLeaderTexts()
     {
-        _leaderTexts = new TextMeshProUGUI[LeaderTextNames.Length];
+        _leaderTexts = new TextMeshProUGUI[_leaderTextNames.Length];
         GameObject[] all = Resources.FindObjectsOfTypeAll<GameObject>();
 
-        for (int i = 0; i < LeaderTextNames.Length; i++)
+        for (int i = 0; i < _leaderTextNames.Length; i++)
         {
             foreach (GameObject go in all)
             {
-                if (go.name == LeaderTextNames[i])
+                if (go.name == _leaderTextNames[i])
                 {
                     _leaderTexts[i] = go.GetComponent<TextMeshProUGUI>();
                     break;

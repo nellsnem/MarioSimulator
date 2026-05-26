@@ -20,39 +20,39 @@ public class PlayerMovement : MonoBehaviour
     // ==========================================
     // 2. PRIVATE FIELDS
     // ==========================================
-    private Rigidbody2D rb;
-    private Camera mainCamera;
-    private BoxCollider2D playerCollider;
-    private JoystickController joystick;
+    private Rigidbody2D _rb;
+    private Camera _mainCamera;
+    private BoxCollider2D _playerCollider;
+    private JoystickController _joystick;
 
-    private bool isFacingRight = true;
-    private bool isDead = false;
-    private bool isInvincible = false;
-    private bool isStarpower = false;
-    private bool jumpPressed = false;
-    private float coyoteCounter;
+    private bool _isFacingRight = true;
+    private bool _isDead = false;
+    private bool _isInvincible = false;
+    private bool _isStarpower = false;
+    private bool _isJumpPressed = false;
+    private float _coyoteCounter;
 
     // ==========================================
     // 3. PROPERTIES
     // ==========================================
-    public bool IsDead => isDead;
-    public bool IsStarpower => isStarpower;
+    public bool IsDead => _isDead;
+    public bool IsStarpower => _isStarpower;
 
     // ==========================================
     // 4. MONOBEHAVIOUR METHODS
     // ==========================================
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
-        playerCollider = GetComponent<BoxCollider2D>();
-        mainCamera = Camera.main;
-        
+        _rb = GetComponent<Rigidbody2D>();
+        _playerCollider = GetComponent<BoxCollider2D>();
+        _mainCamera = Camera.main;
+
         FindJoystickReference();
     }
 
     private void Update()
     {
-        if (isDead)
+        if (_isDead)
         {
             return;
         }
@@ -64,11 +64,11 @@ public class PlayerMovement : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (isDead)
+        if (_isDead)
         {
-            return;  
+            return;
         }
- 
+
         HandleCameraBounds();
     }
 
@@ -87,14 +87,14 @@ public class PlayerMovement : MonoBehaviour
     // ==========================================
     public void OnJumpButtonPressed()
     {
-        jumpPressed = true;
+        _isJumpPressed = true;
     }
 
     public void Grow()
     {
         isBig = true;
-        playerCollider.size = new Vector2(0.75f, 2f);
-        playerCollider.offset = new Vector2(0f, 0.5f);
+        _playerCollider.size = new Vector2(0.75f, 2f);
+        _playerCollider.offset = new Vector2(0f, 0.5f);
     }
 
     public void Starpower()
@@ -104,7 +104,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void Hit()
     {
-        if (isInvincible || isDead)
+        if (_isInvincible || _isDead)
         {
             return;
         }
@@ -114,7 +114,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void Die()
     {
-        if (isDead)
+        if (_isDead)
         {
             return;
         }
@@ -127,16 +127,16 @@ public class PlayerMovement : MonoBehaviour
     // ==========================================
     private void FindJoystickReference()
     {
-        joystick = FindAnyObjectByType<JoystickController>();
-        
-        if (joystick == null)
+        _joystick = FindAnyObjectByType<JoystickController>();
+
+        if (_joystick == null)
         {
             JoystickController[] allJoysticks = FindObjectsByType<JoystickController>(FindObjectsSortMode.None);
-            foreach (var currentJoystick in allJoysticks) 
+            foreach (var currentJoystick in allJoysticks)
             {
-                if (currentJoystick.name == "Joystick") 
+                if (currentJoystick.name == "Joystick")
                 {
-                    joystick = currentJoystick;
+                    _joystick = currentJoystick;
                     break;
                 }
             }
@@ -147,11 +147,11 @@ public class PlayerMovement : MonoBehaviour
     {
         if (isGrounded)
         {
-            coyoteCounter = coyoteTime;
+            _coyoteCounter = coyoteTime;
         }
         else
         {
-            coyoteCounter -= Time.deltaTime;
+            _coyoteCounter -= Time.deltaTime;
         }
     }
 
@@ -161,19 +161,19 @@ public class PlayerMovement : MonoBehaviour
         float targetSpeed = moveInput * moveSpeed;
         float acceleration = CalculateAcceleration(moveInput);
 
-        rb.linearVelocity = new Vector2(
-            Mathf.MoveTowards(rb.linearVelocity.x, targetSpeed, acceleration * Time.deltaTime),
-            rb.linearVelocity.y
+        _rb.linearVelocity = new Vector2(
+            Mathf.MoveTowards(_rb.linearVelocity.x, targetSpeed, acceleration * Time.deltaTime),
+            _rb.linearVelocity.y
         );
 
-        Vector3TurnCheck(moveInput);
+        HandleTurnDirection(moveInput);
     }
 
     private float CalculateMoveInput()
     {
-        float joystickInput = (joystick != null) ? joystick.InputDirection.x : 0f;
+        float joystickInput = (_joystick != null) ? _joystick.InputDirection.x : 0f;
         float keyboardInput = Input.GetAxis("Horizontal");
-        
+
         return Mathf.Abs(joystickInput) > Mathf.Abs(keyboardInput) ? joystickInput : keyboardInput;
     }
 
@@ -181,17 +181,17 @@ public class PlayerMovement : MonoBehaviour
     {
         if (moveInput != 0)
         {
-            bool isTurning = (moveInput > 0 && rb.linearVelocity.x < -0.1f) ||
-                             (moveInput < -0.01f && rb.linearVelocity.x > 0.1f);
+            bool isTurning = (moveInput > 0 && _rb.linearVelocity.x < -0.1f) ||
+                             (moveInput < -0.01f && _rb.linearVelocity.x > 0.1f);
             return isTurning ? moveSpeed * 2f : moveSpeed * 10f;
         }
-        
+
         return moveSpeed * 15f;
     }
 
-    private void Vector3TurnCheck(float moveInput)
+    private void HandleTurnDirection(float moveInput)
     {
-        if ((moveInput > 0 && !isFacingRight) || (moveInput < 0 && isFacingRight))
+        if ((moveInput > 0 && !_isFacingRight) || (moveInput < 0 && _isFacingRight))
         {
             Flip();
         }
@@ -199,10 +199,10 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleJump()
     {
-        bool jumpInput = Input.GetButtonDown("Jump") || jumpPressed;
-        jumpPressed = false; 
+        bool jumpInput = Input.GetButtonDown("Jump") || _isJumpPressed;
+        _isJumpPressed = false;
 
-        if (jumpInput && coyoteCounter > 0f)
+        if (jumpInput && _coyoteCounter > 0f)
         {
             ExecuteJump();
         }
@@ -212,11 +212,11 @@ public class PlayerMovement : MonoBehaviour
 
     private void ExecuteJump()
     {
-        rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-        coyoteCounter = 0f;
+        _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, jumpForce);
+        _coyoteCounter = 0f;
         isGrounded = false;
-        
-        if (MusicManager.Instance != null) 
+
+        if (MusicManager.Instance != null)
         {
             MusicManager.Instance.PlayJump();
         }
@@ -226,26 +226,26 @@ public class PlayerMovement : MonoBehaviour
     {
         if (!isGrounded)
         {
-            if (rb.linearVelocity.y < 0)
+            if (_rb.linearVelocity.y < 0)
             {
-                rb.linearVelocity += Vector2.up * Physics2D.gravity.y * 2f * Time.deltaTime;
+                _rb.linearVelocity += Vector2.up * Physics2D.gravity.y * 2f * Time.deltaTime;
             }
-            else if (rb.linearVelocity.y > 0 && !Input.GetButton("Jump"))
+            else if (_rb.linearVelocity.y > 0 && !Input.GetButton("Jump"))
             {
-                rb.linearVelocity += Vector2.up * Physics2D.gravity.y * 3f * Time.deltaTime;
+                _rb.linearVelocity += Vector2.up * Physics2D.gravity.y * 3f * Time.deltaTime;
             }
         }
     }
 
     private void HandleCameraBounds()
     {
-        if (mainCamera == null) 
+        if (_mainCamera == null)
         {
             return;
         }
 
         Vector3 viewPos = transform.position;
-        Vector3 leftEdge = mainCamera.ScreenToWorldPoint(Vector3.zero);
+        Vector3 leftEdge = _mainCamera.ScreenToWorldPoint(Vector3.zero);
         float leftLimit = leftEdge.x;
 
         if (viewPos.x < leftLimit)
@@ -258,18 +258,18 @@ public class PlayerMovement : MonoBehaviour
     {
         viewPos.x = leftLimit;
         transform.position = viewPos;
- 
-        if (rb.linearVelocity.x < 0)
+
+        if (_rb.linearVelocity.x < 0)
         {
-            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+            _rb.linearVelocity = new Vector2(0, _rb.linearVelocity.y);
         }
     }
 
     private void Shrink()
     {
         isBig = false;
-        playerCollider.size = new Vector2(0.75f, 1f);
-        playerCollider.offset = new Vector2(0f, 0f);
+        _playerCollider.size = new Vector2(0.75f, 1f);
+        _playerCollider.offset = new Vector2(0f, 0f);
     }
 
     private void ProcessHitDamage()
@@ -287,8 +287,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void ProcessDeathSequence()
     {
-        isDead = true;
-        if (MusicManager.Instance != null) 
+        _isDead = true;
+        if (MusicManager.Instance != null)
         {
             MusicManager.Instance.PlayDeath();
         }
@@ -296,8 +296,8 @@ public class PlayerMovement : MonoBehaviour
         DisableColliders();
         DisableCameraScrolling();
 
-        rb.gravityScale = 0f;
-        rb.linearVelocity = Vector2.zero;
+        _rb.gravityScale = 0f;
+        _rb.linearVelocity = Vector2.zero;
 
         StartCoroutine(DeathJump());
 
@@ -325,7 +325,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void Flip()
     {
-        isFacingRight = !isFacingRight;
+        _isFacingRight = !_isFacingRight;
         Vector3 scaleVector = transform.localScale;
         scaleVector.x *= -1;
         transform.localScale = scaleVector;
@@ -359,7 +359,7 @@ public class PlayerMovement : MonoBehaviour
     // ==========================================
     private IEnumerator InvincibilityFrames()
     {
-        isInvincible = true;
+        _isInvincible = true;
 
         SpriteRenderer spriteRendererComponent = GetComponent<PlayerVisuals>() != null
             ? GetComponent<PlayerVisuals>().spriteRenderer
@@ -377,33 +377,33 @@ public class PlayerMovement : MonoBehaviour
         }
 
         spriteRendererComponent.enabled = true;
-        isInvincible = false;
+        _isInvincible = false;
     }
 
     private IEnumerator DeathJump()
     {
         yield return null;
-        rb.gravityScale = 1f;
-        rb.linearVelocity = new Vector2(0f, 6f);
-        yield return new WaitUntil(() => rb.linearVelocity.y <= 0f);
-        rb.bodyType = RigidbodyType2D.Kinematic;
-        rb.linearVelocity = new Vector2(0f, -8f);
+        _rb.gravityScale = 1f;
+        _rb.linearVelocity = new Vector2(0f, 6f);
+        yield return new WaitUntil(() => _rb.linearVelocity.y <= 0f);
+        _rb.bodyType = RigidbodyType2D.Kinematic;
+        _rb.linearVelocity = new Vector2(0f, -8f);
     }
 
     private IEnumerator StarpowerRoutine()
     {
-        isStarpower = true; 
-        isInvincible = true; 
- 
-        moveSpeed = 15f; 
-        jumpForce = 22f; 
+        _isStarpower = true;
+        _isInvincible = true;
 
-        yield return new WaitForSeconds(5f); 
- 
-        moveSpeed = 8f; 
-        jumpForce = 20f; 
+        moveSpeed = 15f;
+        jumpForce = 22f;
 
-        isInvincible = false; 
-        isStarpower = false; 
+        yield return new WaitForSeconds(5f);
+
+        moveSpeed = 8f;
+        jumpForce = 20f;
+
+        _isInvincible = false;
+        _isStarpower = false;
     }
 }
