@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
 
-
 public class FlagPole : MonoBehaviour
 {
     // ==========================================
@@ -25,28 +24,44 @@ public class FlagPole : MonoBehaviour
     // ==========================================
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (_isTriggered)
+        if (_isTriggered) return;
+        if (!other.CompareTag("Player")) return;
+        if (!other.TryGetComponent(out PlayerMovement player)) return;
+
+        _isTriggered = true;
+
+        FreezeOtherPlayers(player);
+
+        if (GameManager.Instance != null)
         {
-            return;
+            GameManager.Instance.StartWinSequence();
         }
 
-        if (other.CompareTag("Player") && other.TryGetComponent(out PlayerMovement player))
-        {
-            _isTriggered = true;
-
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.StartWinSequence();
-            }
-
-            StartCoroutine(MoveTo(flag, poleBottom.position));
-            StartCoroutine(LevelCompleteSequence(player));
-        }
+        StartCoroutine(MoveTo(flag, poleBottom.position));
+        StartCoroutine(LevelCompleteSequence(player));
     }
 
     // ==========================================
     // 4. PRIVATE METHODS
     // ==========================================
+    private void FreezeOtherPlayers(PlayerMovement except)
+    {
+        PlayerMovement[] allPlayers = FindObjectsByType<PlayerMovement>(FindObjectsSortMode.None);
+        foreach (PlayerMovement other in allPlayers)
+        {
+            if (other == except) continue;
+
+            other.enabled = false;
+
+            Rigidbody2D rb = other.GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+                rb.bodyType       = RigidbodyType2D.Kinematic;
+            }
+        }
+    }
+
     private void SetFacing(Transform t, bool facingRight)
     {
         Vector3 s = t.localScale;
@@ -62,7 +77,7 @@ public class FlagPole : MonoBehaviour
         player.enabled = false;
 
         Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
-        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.bodyType       = RigidbodyType2D.Kinematic;
         rb.linearVelocity = Vector2.zero;
 
         foreach (Collider2D col in player.GetComponents<Collider2D>())
@@ -103,18 +118,12 @@ public class FlagPole : MonoBehaviour
 
     private IEnumerator AutoRunToCastle(PlayerMovement player, PlayerVisuals visuals, Vector3 target)
     {
-        if (visuals == null)
-        {
-            yield break;
-        }
+        if (visuals == null) yield break;
 
         Sprite[] runFrames = player.isBig ? visuals.bigRun : visuals.smallRun;
-        if (runFrames == null || runFrames.Length == 0)
-        {
-            yield break;
-        }
+        if (runFrames == null || runFrames.Length == 0) yield break;
 
-        int frame = 0;
+        int   frame = 0;
         float timer = 0f;
 
         while (Vector3.Distance(player.transform.position, target) > 0.1f)
@@ -127,7 +136,7 @@ public class FlagPole : MonoBehaviour
                 timer = 0f;
                 frame = (frame + 1) % Mathf.Min(3, runFrames.Length);
                 visuals.spriteRenderer.sprite = runFrames[frame];
-                visuals.spriteRenderer.color = Color.white;
+                visuals.spriteRenderer.color  = Color.white;
             }
             yield return null;
         }

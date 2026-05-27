@@ -19,7 +19,17 @@ public class GameManager : MonoBehaviour
     public int PlayerCount { get; private set; } = 1;
 
     // ==========================================
-    // 2. PRIVATE FIELDS
+    // 2. PUBLIC FIELDS
+    // ==========================================
+    [Header("Co-op Spawning References")]
+    [Tooltip("Drag your Mario 2 prefab here from Project folder")]
+    public GameObject player2Prefab;
+
+    [Tooltip("Drag an empty GameObject from your Hierarchy here to mark Player 2 spawn position")]
+    public Transform player2SpawnPoint;
+
+    // ==========================================
+    // 3. PRIVATE FIELDS
     // ==========================================
     private bool _levelComplete = false;
     private bool _isFirstLaunch = true;
@@ -32,14 +42,14 @@ public class GameManager : MonoBehaviour
     private string _playerName = "";
 
     // ==========================================
-    // 3. CONSTANTS
+    // 4. CONSTANTS
     // ==========================================
     private const int DEFAULT_LIVES   = 3;
     private const int DEFAULT_TIME    = 150;
     private const int NAME_CHAR_LIMIT = 5;
 
     // ==========================================
-    // 4. MONOBEHAVIOUR METHODS
+    // 5. MONOBEHAVIOUR METHODS
     // ==========================================
     private void Awake()
     {
@@ -88,16 +98,17 @@ public class GameManager : MonoBehaviour
         if (_isFirstLaunch)
         {
             Time.timeScale = 0f;
+            return;
         }
-        else
-        {
-            Time.timeScale = 1f;
-            StartGameLogic();
-        }
+
+        Time.timeScale = 1f;
+        StartGameLogic();
+
+        RefreshCameraTargets();
     }
 
     // ==========================================
-    // 5. PUBLIC METHODS
+    // 6. PUBLIC METHODS
     // ==========================================
     public void AddScore(int amount)
     {
@@ -122,6 +133,7 @@ public class GameManager : MonoBehaviour
 
     public void ShowVictoryUI()
     {
+        Time.timeScale = 0f;
         if (MusicManager.Instance != null)
         {
             MusicManager.Instance.PlayVictory();
@@ -180,17 +192,11 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Called by "1 Player" button on StartPanel.
-    /// </summary>
     public void StartOnePlayerGame()
     {
         StartGame(playerCount: 1);
     }
 
-    /// <summary>
-    /// Called by "2 Players" button on StartPanel.
-    /// </summary>
     public void StartTwoPlayerGame()
     {
         StartGame(playerCount: 2);
@@ -233,7 +239,7 @@ public class GameManager : MonoBehaviour
     }
 
     // ==========================================
-    // 6. PRIVATE METHODS
+    // 7. PRIVATE METHODS
     // ==========================================
     private void StartGame(int playerCount)
     {
@@ -257,6 +263,90 @@ public class GameManager : MonoBehaviour
 
         Time.timeScale = 1f;
         StartGameLogic();
+
+        RefreshCameraTargets();
+    }
+
+    private void RefreshCameraTargets()
+    {
+        CameraScrolling standardCam = Camera.main != null ? Camera.main.GetComponent<CameraScrolling>() : null;
+        
+        if (standardCam == null)
+        {
+            return;
+        }
+
+        PlayerMovement p1 = FindPlayerByIndex(1);
+        if (p1 != null)
+        {
+            standardCam.player1 = p1.transform;
+        }
+
+        if (PlayerCount == 2)
+        {
+            GameObject p2Object = SpawnPlayer2();
+            if (p2Object != null)
+            {
+                standardCam.player2 = p2Object.transform;
+            }
+        }
+        else
+        {
+            standardCam.player2 = null;
+        }
+    }
+
+    private GameObject SpawnPlayer2()
+    {
+        if (player2Prefab == null)
+        {
+            Debug.LogWarning("SpawnPlayer2: player2Prefab reference is missing in Inspector!");
+            return null;
+        }
+
+        PlayerMovement existingP2 = FindPlayerByIndex(2);
+        if (existingP2 != null)
+        {
+            return existingP2.gameObject;
+        }
+
+        Vector3 spawnPos = Vector3.zero;
+        if (player2SpawnPoint != null)
+        {
+            spawnPos = player2SpawnPoint.position;
+        }
+        else
+        {
+            PlayerMovement p1 = FindPlayerByIndex(1);
+            if (p1 != null)
+            {
+                spawnPos = p1.transform.position + Vector3.right * 1.5f;
+            }
+        }
+
+        GameObject p2 = Instantiate(player2Prefab, spawnPos, Quaternion.identity);
+        p2.name = "Mario 2";
+
+        PlayerMovement pm = p2.GetComponent<PlayerMovement>();
+        if (pm != null)
+        {
+            pm.playerIndex = 2;
+        }
+
+        return p2;
+    }
+
+    private PlayerMovement FindPlayerByIndex(int index)
+    {
+        PlayerMovement[] allPlayers = FindObjectsByType<PlayerMovement>(FindObjectsInactive.Include);
+        foreach (PlayerMovement p in allPlayers)
+        {
+            if (p != null && p.playerIndex == index)
+            {
+                return p;
+            }
+        }
+        return null;
     }
 
     private void FindPanels()
@@ -318,11 +408,6 @@ public class GameManager : MonoBehaviour
             BindButton(_startPanel, "TwoPlayersButton", StartTwoPlayerGame);
             BindButton(_startPanel, "ExitClickButton",  QuitGame);
         }
-
-        if (_victoryPanel  == null) Debug.LogWarning("FindPanels: 'VictoryPanel' not found!");
-        if (_gameOverPanel == null) Debug.LogWarning("FindPanels: 'GameOverPanel' not found!");
-        if (_startPanel    == null) Debug.LogWarning("FindPanels: 'StartPanel' not found!");
-        if (_nameInput     == null) Debug.LogWarning("FindPanels: TMP_InputField not found in StartPanel!");
     }
 
     private void BindButton(GameObject panel, string namePart, UnityEngine.Events.UnityAction action)
@@ -391,7 +476,7 @@ public class GameManager : MonoBehaviour
     }
 
     // ==========================================
-    // 7. COROUTINES
+    // 8. COROUTINES
     // ==========================================
     private IEnumerator ResetAfterDelay(float delay)
     {

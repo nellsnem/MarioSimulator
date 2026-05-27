@@ -1,35 +1,75 @@
 using UnityEngine;
- 
+
 public class CameraScrolling : MonoBehaviour
 {
     // ==========================================
     // 1. PUBLIC FIELDS
     // ==========================================
-    public Transform player;
+    [Header("Targets")]
+    public Transform player1;
+    public Transform player2;
+
+    [Header("Co-op Settings")]
+    public float maxPlayerDistance = 14f;
+
+    [Range(0f, 0.8f)]
+    public float lookAheadFactor = 0.4f;
 
     // ==========================================
-    // 2. MONOBEHAVIOUR METHODS
+    // 2. PRIVATE FIELDS
     // ==========================================
+    private float _halfScreenWidth;
+
+    // ==========================================
+    // 3. MONOBEHAVIOUR METHODS
+    // ==========================================
+    private void Start()
+    {
+        Camera cam = GetComponent<Camera>();
+        if (cam != null)
+        {
+            // Ширина екрана у world units
+            _halfScreenWidth = cam.orthographicSize * cam.aspect;
+        }
+    }
+
     private void LateUpdate()
     {
-        if (player == null)
-        {
-            return;
-        }
-
-        FollowPlayer();
+        FollowPlayers();
     }
 
     // ==========================================
-    // 3. PRIVATE METHODS
+    // 4. PRIVATE METHODS
     // ==========================================
-    private void FollowPlayer()
+    private void FollowPlayers()
     {
-        Vector3 cameraPos = transform.position;
+        if (player1 == null) return;
 
-        if (player.position.x > cameraPos.x)
+        Vector3 cameraPos = transform.position;
+        float targetX     = cameraPos.x;
+
+        bool isP2Active = player2 != null && player2.gameObject.activeInHierarchy;
+
+        if (!isP2Active)
         {
-            cameraPos.x = player.position.x;
+            targetX = player1.position.x;
+        }
+        else
+        {
+            float p1X = player1.position.x;
+            float p2X = player2.position.x;
+
+            float laggingX = Mathf.Min(p1X, p2X);
+            float leadingX = Mathf.Max(p1X, p2X);
+
+            float lookahead = Mathf.Min(leadingX - laggingX, maxPlayerDistance) * lookAheadFactor;
+            targetX = laggingX + lookahead;
+
+        }
+
+        if (targetX > cameraPos.x)
+        {
+            cameraPos.x = targetX;
         }
 
         transform.position = cameraPos;

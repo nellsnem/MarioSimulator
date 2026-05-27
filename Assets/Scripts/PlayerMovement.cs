@@ -10,7 +10,7 @@ public class PlayerMovement : MonoBehaviour
     // ==========================================
     [Header("Movement Settings")]
     public float moveSpeed = 8f;
-    public float jumpForce = 12f;
+    public float jumpForce = 14f;
     public float coyoteTime = 0.2f;
 
     [Header("Player Settings")]
@@ -25,7 +25,7 @@ public class PlayerMovement : MonoBehaviour
     // ==========================================
     private Rigidbody2D _rb;
     private Camera _mainCamera;
-    private BoxCollider2D _playerCollider;
+    private Collider2D _playerCollider;
     private JoystickController _joystick;
 
     private bool _isFacingRight = true;
@@ -54,14 +54,16 @@ public class PlayerMovement : MonoBehaviour
     // ==========================================
     // 4. MONOBEHAVIOUR METHODS
     // ==========================================
-    private void Awake()
-    {
-        _rb             = GetComponent<Rigidbody2D>();
-        _playerCollider = GetComponent<BoxCollider2D>();
-        _mainCamera     = Camera.main;
+private void Awake()
+{
+    _rb             = GetComponent<Rigidbody2D>();
+    _playerCollider = GetComponentInChildren<BoxCollider2D>();
+    if (_playerCollider == null)
+        _playerCollider = GetComponentInChildren<CapsuleCollider2D>();
 
-        FindJoystickReference();
-    }
+    _mainCamera = Camera.main;
+    FindJoystickReference();
+}
 
     private void Update()
     {
@@ -103,12 +105,41 @@ public class PlayerMovement : MonoBehaviour
         _isJumpPressed = true;
     }
 
-    public void Grow()
+public void Grow()
+{
+    if (_playerCollider == null) return;
+
+    isBig = true;
+
+    if (_playerCollider is BoxCollider2D box)
     {
-        isBig                   = true;
-        _playerCollider.size   = new Vector2(0.75f, 2f);
-        _playerCollider.offset = new Vector2(0f, 0.5f);
+        box.size   = new Vector2(0.75f, 2f);
+        box.offset = new Vector2(0f, 0.5f);
     }
+    else if (_playerCollider is CapsuleCollider2D capsule)
+    {
+        capsule.size   = new Vector2(0.75f, 2f);
+        capsule.offset = new Vector2(0f, 0.5f);
+    }
+}
+
+private void Shrink()
+{
+    if (_playerCollider == null) return;
+
+    isBig = false;
+
+    if (_playerCollider is BoxCollider2D box)
+    {
+        box.size   = new Vector2(0.75f, 1f);
+        box.offset = new Vector2(0f, 0f);
+    }
+    else if (_playerCollider is CapsuleCollider2D capsule)
+    {
+        capsule.size   = new Vector2(0.75f, 1f);
+        capsule.offset = new Vector2(0f, 0f);
+    }
+}
 
     public void Starpower()
     {
@@ -127,10 +158,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void Die()
     {
-        if (_isDead)
-        {
-            return;
-        }
+        if (_isDead || _isInvincible) return;
 
         ProcessDeathSequence();
     }
@@ -255,7 +283,7 @@ public class PlayerMovement : MonoBehaviour
             return Input.GetKeyDown(JumpKeyP2);
         }
 
-        return Input.GetKeyDown(JumpKeyP1);
+        return Input.GetKeyDown(JumpKeyP1) || Input.GetKeyDown(KeyCode.Space);
     }
 
     private void ExecuteJump()
@@ -295,25 +323,33 @@ public class PlayerMovement : MonoBehaviour
             return Input.GetKey(JumpKeyP2);
         }
 
-        return Input.GetKey(JumpKeyP1);
+        return Input.GetKey(JumpKeyP1) || Input.GetKey(KeyCode.Space);
     }
 
-    private void HandleCameraBounds()
+private void HandleCameraBounds()
+{
+    if (_mainCamera == null) return;
+
+    Vector3 pos       = transform.position;
+    Vector3 leftEdge  = _mainCamera.ScreenToWorldPoint(Vector3.zero);
+    Vector3 rightEdge = _mainCamera.ScreenToWorldPoint(new Vector3(Screen.width, 0, 0));
+
+    if (pos.x < leftEdge.x)
     {
-        if (_mainCamera == null)
-        {
-            return;
-        }
+        RestrictPlayerToLeft(pos, leftEdge.x);
+    }
 
-        Vector3 viewPos  = transform.position;
-        Vector3 leftEdge = _mainCamera.ScreenToWorldPoint(Vector3.zero);
-        float leftLimit  = leftEdge.x;
+    if (pos.x > rightEdge.x)
+    {
+        pos.x              = rightEdge.x;
+        transform.position = pos;
 
-        if (viewPos.x < leftLimit)
+        if (_rb.linearVelocity.x > 0)
         {
-            RestrictPlayerToLeft(viewPos, leftLimit);
+            _rb.linearVelocity = new Vector2(0, _rb.linearVelocity.y);
         }
     }
+}
 
     private void RestrictPlayerToLeft(Vector3 viewPos, float leftLimit)
     {
@@ -326,12 +362,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private void Shrink()
-    {
-        isBig                   = false;
-        _playerCollider.size   = new Vector2(0.75f, 1f);
-        _playerCollider.offset = new Vector2(0f, 0f);
-    }
+ 
 
     private void ProcessHitDamage()
     {
@@ -367,7 +398,37 @@ public class PlayerMovement : MonoBehaviour
         {
             GameManager.Instance.ResetLevel(3f);
         }
+        MakeOtherPlayersInvincible(3f);
     }
+
+    private void MakeOtherPlayersInvincible(float duration)
+    {
+        PlayerMovement[] allPlayers = FindObjectsByType<PlayerMovement>(FindObjectsSortMode.None);
+        foreach (PlayerMovement other in allPlayers)
+        {
+            if (other != this && !other.IsDead)
+            {
+                other.StartCoroutine(other.InvincibilityFrames(duration));
+            }
+        }
+    }
+
+private void DisableCameraScrolling()
+{
+    CameraScrolling cam = Camera.main != null
+        ? Camera.main.GetComponent<CameraScrolling>()
+        : null;
+
+    if (cam == null) return;
+
+    if (playerIndex == 1) cam.player1 = null;
+    if (playerIndex == 2) cam.player2 = null;
+
+    if (cam.player1 == null && cam.player2 == null)
+    {
+        cam.enabled = false;
+    }
+}
 
     private void DisableColliders()
     {
@@ -377,17 +438,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private void DisableCameraScrolling()
-    {
-        CameraScrolling cameraScrolling = Camera.main != null
-            ? Camera.main.GetComponent<CameraScrolling>()
-            : null;
 
-        if (cameraScrolling != null)
-        {
-            cameraScrolling.enabled = false;
-        }
-    }
 
     private void Flip()
     {
@@ -423,28 +474,41 @@ public class PlayerMovement : MonoBehaviour
     // ==========================================
     // 7. COROUTINES
     // ==========================================
-    private IEnumerator InvincibilityFrames()
+public IEnumerator InvincibilityFrames(float duration = 2f)
+{
+    _isInvincible = true;
+
+    SpriteRenderer spriteRendererComponent = null;
+
+    PlayerVisuals visuals = GetComponent<PlayerVisuals>();
+    if (visuals != null && visuals.spriteRenderer != null)
     {
-        _isInvincible = true;
-
-        SpriteRenderer spriteRendererComponent = GetComponent<PlayerVisuals>() != null
-            ? GetComponent<PlayerVisuals>().spriteRenderer
-            : GetComponent<SpriteRenderer>();
-
-        float duration      = 2f;
-        float blinkInterval = 0.1f;
-        float elapsed       = 0f;
-
-        while (elapsed < duration)
-        {
-            spriteRendererComponent.enabled = !spriteRendererComponent.enabled;
-            yield return new WaitForSeconds(blinkInterval);
-            elapsed += blinkInterval;
-        }
-
-        spriteRendererComponent.enabled = true;
-        _isInvincible = false;
+        spriteRendererComponent = visuals.spriteRenderer;
     }
+    else
+    {
+        spriteRendererComponent = GetComponentInChildren<SpriteRenderer>();
+    }
+
+    if (spriteRendererComponent == null)
+    {
+        _isInvincible = false;
+        yield break;
+    }
+
+    float blinkInterval = 0.1f;
+    float elapsed       = 0f;
+
+    while (elapsed < duration)
+    {
+        spriteRendererComponent.enabled = !spriteRendererComponent.enabled;
+        yield return new WaitForSeconds(blinkInterval);
+        elapsed += blinkInterval;
+    }
+
+    spriteRendererComponent.enabled = true;
+    _isInvincible = false;
+}
 
     private IEnumerator DeathJump()
     {

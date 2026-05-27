@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8585252330447424641}
   - component: {fileID: 2072657829813686536}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Big
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -103,7 +103,7 @@ GameObject:
   - component: {fileID: 5918782062695092315}
   - component: {fileID: 4515720452445297006}
   - component: {fileID: 3656262808205880717}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Mario
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -140,9 +140,9 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 0
+  m_LinearDamping: 0.1
   m_AngularDamping: 0
-  m_GravityScale: 0
+  m_GravityScale: 4
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -150,9 +150,9 @@ Rigidbody2D:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_SleepingMode: 1
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
   m_Constraints: 4
 --- !u!70 &4515720452445297006
 CapsuleCollider2D:
@@ -204,6 +204,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   moveSpeed: 8
+  jumpForce: 20
+  coyoteTime: 0.2
+  playerIndex: 1
+  isGrounded: 0
+  isBig: 0
 --- !u!1 &5727691736524681013
 GameObject:
   m_ObjectHideFlags: 0
@@ -214,7 +219,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5534141360121033824}
   - component: {fileID: 6579915055277430393}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Small
   m_TagString: Untagged
   m_Icon: {fileID: 0}
