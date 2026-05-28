@@ -28,6 +28,10 @@ public class GameManager : MonoBehaviour
     [Tooltip("Drag an empty GameObject from your Hierarchy here to mark Player 2 spawn position")]
     public Transform player2SpawnPoint;
 
+    [Header("Co-op Objects")]
+    [Tooltip("Drag CoopObjects from Hierarchy here")]
+    public GameObject coopObjects;
+
     // ==========================================
     // 3. PRIVATE FIELDS
     // ==========================================
@@ -103,8 +107,8 @@ public class GameManager : MonoBehaviour
 
         Time.timeScale = 1f;
         StartGameLogic();
-
         RefreshCameraTargets();
+        ActivateCoopObjects(PlayerCount == 2);
     }
 
     // ==========================================
@@ -134,6 +138,7 @@ public class GameManager : MonoBehaviour
     public void ShowVictoryUI()
     {
         Time.timeScale = 0f;
+
         if (MusicManager.Instance != null)
         {
             MusicManager.Instance.PlayVictory();
@@ -261,16 +266,27 @@ public class GameManager : MonoBehaviour
             _startPanel.SetActive(false);
         }
 
+        ActivateCoopObjects(playerCount == 2);
+
         Time.timeScale = 1f;
         StartGameLogic();
-
         RefreshCameraTargets();
+    }
+
+    private void ActivateCoopObjects(bool isActive)
+    {
+        if (coopObjects != null)
+        {
+            coopObjects.SetActive(isActive);
+        }
     }
 
     private void RefreshCameraTargets()
     {
-        CameraScrolling standardCam = Camera.main != null ? Camera.main.GetComponent<CameraScrolling>() : null;
-        
+        CameraScrolling standardCam = Camera.main != null
+            ? Camera.main.GetComponent<CameraScrolling>()
+            : null;
+
         if (standardCam == null)
         {
             return;
@@ -449,6 +465,7 @@ public class GameManager : MonoBehaviour
     private void ShowGameOver()
     {
         CancelInvoke(nameof(TickTime));
+        Time.timeScale = 0f;
 
         if (MusicManager.Instance != null)
         {

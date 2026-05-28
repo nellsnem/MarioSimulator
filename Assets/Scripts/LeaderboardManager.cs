@@ -95,6 +95,7 @@ public class LeaderboardManager : MonoBehaviour
     {
         FindLeaderTexts();
         UpdateLeaderboardDisplay();
+        
     }
 
     private void FindLeaderTexts()

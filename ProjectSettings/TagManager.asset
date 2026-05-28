@@ -8,6 +8,8 @@ TagManager:
   - Enemy
   - Shell
   - Player2
+  - GreenCoin
+  - RedCoin
   layers:
   - Default
   - TransparentFX
