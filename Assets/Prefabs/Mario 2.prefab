@@ -103,6 +103,7 @@ GameObject:
   - component: {fileID: 5918782062695092315}
   - component: {fileID: 4515720452445297006}
   - component: {fileID: 3656262808205880717}
+  - component: {fileID: -8374479673064883416}
   m_Layer: 10
   m_Name: Mario 2
   m_TagString: Player
@@ -119,7 +120,7 @@ Transform:
   m_GameObject: {fileID: 3941670472640698253}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3, y: 3.28, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -209,6 +210,34 @@ MonoBehaviour:
   playerIndex: 2
   isGrounded: 0
   isBig: 0
+--- !u!114 &-8374479673064883416
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3941670472640698253}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c54858f27235804c9841bbf462a0824, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerVisuals
+  spriteRenderer: {fileID: 6579915055277430393}
+  smallIdle: {fileID: 21300000, guid: a44694558fff53740a8f3415be18e72d, type: 3}
+  smallJump: {fileID: 21300000, guid: ea6e20247ce23984ebf4eecc90bf7a61, type: 3}
+  smallDeath: {fileID: 21300000, guid: c39c274c88de09147af6dca580840061, type: 3}
+  smallRun:
+  - {fileID: 21300000, guid: 393ada0225a9de84eac5d6b6d0ecbce7, type: 3}
+  - {fileID: 21300000, guid: 88b9a60b1f2a9994f968d39bb2c2036f, type: 3}
+  - {fileID: 21300000, guid: 51cbcec2d2221314989c589eca685874, type: 3}
+  - {fileID: 21300000, guid: e564009dd2b00d54889a70fb7690343f, type: 3}
+  bigIdle: {fileID: 21300000, guid: e53971b792773454a9a6975d3ce5a318, type: 3}
+  bigJump: {fileID: 21300000, guid: f6f1264afe155084b9d0fc3dc8322a97, type: 3}
+  bigRun:
+  - {fileID: 21300000, guid: e8e12825e5f475d44b50861fb7e3723c, type: 3}
+  - {fileID: 21300000, guid: a1193695be55d514db2c6b99aefd3eb4, type: 3}
+  - {fileID: 21300000, guid: 821142fa82164f4409dfb3219d0c0620, type: 3}
+  - {fileID: 21300000, guid: 667126368051bf5409cadaafaddc7760, type: 3}
 --- !u!1 &5727691736524681013
 GameObject:
   m_ObjectHideFlags: 0
@@ -235,7 +264,7 @@ Transform:
   m_GameObject: {fileID: 5727691736524681013}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.061, y: 0.123, z: 0}
+  m_LocalPosition: {x: 0.061, y: -0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

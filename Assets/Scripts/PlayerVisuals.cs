@@ -53,6 +53,8 @@ public class PlayerVisuals : MonoBehaviour
     {
         _movement = GetComponent<PlayerMovement>();
         _rb       = GetComponent<Rigidbody2D>();
+
+        
     }
 
     private void LateUpdate()

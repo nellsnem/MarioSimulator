@@ -8,10 +8,16 @@ public class GroundCoin : MonoBehaviour
     private const int COIN_SCORE = 100;
 
     // ==========================================
-    // 2. MONOBEHAVIOUR METHODS
+    // 2. PRIVATE FIELDS
+    // ==========================================
+    private bool _isCollected = false;
+
+    // ==========================================
+    // 3. MONOBEHAVIOUR METHODS
     // ==========================================
     private void OnTriggerEnter2D(Collider2D other)
     {
+        if (_isCollected) return; // ← зупиняє повторний збір
         if (!other.CompareTag("Player")) return;
 
         PlayerMovement player = other.GetComponent<PlayerMovement>();
@@ -23,7 +29,7 @@ public class GroundCoin : MonoBehaviour
     }
 
     // ==========================================
-    // 3. PRIVATE METHODS
+    // 4. PRIVATE METHODS
     // ==========================================
     private bool CanCollect(PlayerMovement player)
     {
@@ -35,8 +41,16 @@ public class GroundCoin : MonoBehaviour
 
     private void Collect()
     {
-        GameManager.Instance.AddCoin();
-        GameManager.Instance.AddScore(COIN_SCORE);
+        _isCollected = true; // ← одразу блокуємо повторний виклик
+
+        if (CompareTag("RedCoin"))
+        {
+            GameManager.Instance.AddRedCoin();
+        }
+        else if (CompareTag("GreenCoin"))
+        {
+            GameManager.Instance.AddGreenCoin();
+        }
 
         if (MusicManager.Instance != null)
         {

@@ -17,19 +17,18 @@ public class GameManager : MonoBehaviour
     public int score       { get; private set; } = 0;
     public int time        { get; set; }         = 150;
     public int PlayerCount { get; private set; } = 1;
+    public int redCoins   { get; private set; } = 0;
+    public int greenCoins { get; private set; } = 0;
 
     // ==========================================
     // 2. PUBLIC FIELDS
     // ==========================================
     [Header("Co-op Spawning References")]
-    [Tooltip("Drag your Mario 2 prefab here from Project folder")]
     public GameObject player2Prefab;
 
-    [Tooltip("Drag an empty GameObject from your Hierarchy here to mark Player 2 spawn position")]
     public Transform player2SpawnPoint;
 
     [Header("Co-op Objects")]
-    [Tooltip("Drag CoopObjects from Hierarchy here")]
     public GameObject coopObjects;
 
     // ==========================================
@@ -94,22 +93,28 @@ public class GameManager : MonoBehaviour
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+{
+    _levelComplete = false;
+    FindPanels();
+
+    if (_isFirstLaunch)
     {
-        _levelComplete = false;
-        FindPanels();
-
-        if (_isFirstLaunch)
-        {
-            Time.timeScale = 0f;
-            return;
-        }
-
-        Time.timeScale = 1f;
-        StartGameLogic();
-        RefreshCameraTargets();
-        ActivateCoopObjects(PlayerCount == 2);
+        Time.timeScale = 0f;
+        return;
     }
+
+    Time.timeScale = 1f;
+    StartGameLogic();
+    RefreshCameraTargets();
+    StartCoroutine(ActivateCoopObjectsDelayed(PlayerCount == 2));
+}
+
+private IEnumerator ActivateCoopObjectsDelayed(bool isActive)
+{
+    yield return null; // чекаємо один кадр поки всі Awake спрацюють
+    ActivateCoopObjects(isActive);
+}
 
     // ==========================================
     // 6. PUBLIC METHODS
@@ -128,7 +133,17 @@ public class GameManager : MonoBehaviour
     {
         lives++;
     }
+    public void AddRedCoin()
+    {
+        redCoins++;
+        coins++;
+    }
 
+    public void AddGreenCoin()
+    {
+        greenCoins++;
+        coins++;
+    }
     public void StartWinSequence()
     {
         _levelComplete = true;
@@ -186,6 +201,8 @@ public class GameManager : MonoBehaviour
             coins = 0;
             score = 0;
             time  = DEFAULT_TIME;
+            redCoins   = 0; // ← додай
+            greenCoins = 0; // ← додай
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
         else
@@ -194,6 +211,8 @@ public class GameManager : MonoBehaviour
             coins = 0;
             score = 0;
             time  = DEFAULT_TIME;
+            redCoins   = 0; // ← додай
+            greenCoins = 0; // ← додай
         }
     }
 
@@ -273,13 +292,31 @@ public class GameManager : MonoBehaviour
         RefreshCameraTargets();
     }
 
-    private void ActivateCoopObjects(bool isActive)
+private void ActivateCoopObjects(bool isActive)
+{
+    if (coopObjects == null)
     {
-        if (coopObjects != null)
+        CoopObjectsRegistrar registrar = 
+            FindObjectsByType<CoopObjectsRegistrar>(
+                FindObjectsInactive.Include, 
+                FindObjectsSortMode.None
+            ).Length > 0 
+            ? FindObjectsByType<CoopObjectsRegistrar>(
+                FindObjectsInactive.Include, 
+                FindObjectsSortMode.None)[0] 
+            : null;
+
+        if (registrar != null)
         {
-            coopObjects.SetActive(isActive);
+            coopObjects = registrar.gameObject;
         }
     }
+
+    if (coopObjects != null)
+    {
+        coopObjects.SetActive(isActive);
+    }
+}
 
     private void RefreshCameraTargets()
     {
@@ -489,6 +526,8 @@ public class GameManager : MonoBehaviour
         lives = DEFAULT_LIVES;
         coins = 0;
         score = 0;
+        redCoins   = 0; // ← додай
+        greenCoins = 0; 
         time  = DEFAULT_TIME;
     }
 
