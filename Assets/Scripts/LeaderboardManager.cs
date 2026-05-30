@@ -4,7 +4,9 @@ using TMPro;
 using System.Collections.Generic;
 using System.Linq;
 
-
+/// <summary>
+/// Manages top-3 leaderboard persistence and UI display across scenes.
+/// </summary>
 public class LeaderboardManager : MonoBehaviour
 {
     // ==========================================
@@ -17,12 +19,14 @@ public class LeaderboardManager : MonoBehaviour
     // ==========================================
     private TextMeshProUGUI[] _leaderTexts;
 
+    // Static readonly field — belongs in private fields, not constants
+    private static readonly string[] _leaderTextNames = { "top1", "top2", "top3" };
+
     // ==========================================
     // 3. CONSTANTS
     // ==========================================
     private const int TOP_COUNT = 3;
-
-    private static readonly string[] _leaderTextNames = { "top1", "top2", "top3" };
+    private const string LEADERBOARD_KEY = "LeaderboardData";
 
     // ==========================================
     // 4. MONOBEHAVIOUR METHODS
@@ -39,8 +43,15 @@ public class LeaderboardManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    private void OnEnable()  => SceneManager.sceneLoaded += OnSceneLoaded;
-    private void OnDisable() => SceneManager.sceneLoaded -= OnSceneLoaded;
+    private void OnEnable()
+    {
+        SubscribeEvents();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeEvents();
+    }
 
     private void Start()
     {
@@ -51,16 +62,18 @@ public class LeaderboardManager : MonoBehaviour
     // ==========================================
     // 5. PUBLIC METHODS
     // ==========================================
-    public void SaveScore(string name, int score)
+    public void SaveScore(string playerName, int playerScore)
     {
         List<LeaderboardEntry> scores = LoadLeaderboard();
-        scores.Add(new LeaderboardEntry(name, score));
+        scores.Add(new LeaderboardEntry(playerName, playerScore));
 
-        // Sort descending by score and keep top entries only
-        var topScores = scores.OrderByDescending(s => s.score).Take(TOP_COUNT).ToList();
+        List<LeaderboardEntry> topScores = scores
+            .OrderByDescending(s => s.score)
+            .Take(TOP_COUNT)
+            .ToList();
 
         string json = JsonUtility.ToJson(new SerializationWrapper<LeaderboardEntry> { items = topScores });
-        PlayerPrefs.SetString("LeaderboardData", json);
+        PlayerPrefs.SetString(LEADERBOARD_KEY, json);
         PlayerPrefs.Save();
 
         UpdateLeaderboardDisplay();
@@ -91,11 +104,20 @@ public class LeaderboardManager : MonoBehaviour
     // ==========================================
     // 6. PRIVATE METHODS
     // ==========================================
+    private void SubscribeEvents()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void UnsubscribeEvents()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         FindLeaderTexts();
         UpdateLeaderboardDisplay();
-        
     }
 
     private void FindLeaderTexts()
@@ -105,20 +127,26 @@ public class LeaderboardManager : MonoBehaviour
 
         for (int i = 0; i < _leaderTextNames.Length; i++)
         {
-            foreach (GameObject go in all)
+            _leaderTexts[i] = FindLeaderText(all, _leaderTextNames[i]);
+        }
+    }
+
+    private TextMeshProUGUI FindLeaderText(GameObject[] all, string targetName)
+    {
+        foreach (GameObject go in all)
+        {
+            if (go.name == targetName)
             {
-                if (go.name == _leaderTextNames[i])
-                {
-                    _leaderTexts[i] = go.GetComponent<TextMeshProUGUI>();
-                    break;
-                }
+                return go.GetComponent<TextMeshProUGUI>();
             }
         }
+
+        return null;
     }
 
     private List<LeaderboardEntry> LoadLeaderboard()
     {
-        string json = PlayerPrefs.GetString("LeaderboardData", "");
+        string json = PlayerPrefs.GetString(LEADERBOARD_KEY, "");
 
         if (string.IsNullOrEmpty(json))
         {
@@ -138,10 +166,10 @@ public class LeaderboardEntry
     public string name;
     public int    score;
 
-    public LeaderboardEntry(string name, int score)
+    public LeaderboardEntry(string entryName, int entryScore)
     {
-        this.name  = name;
-        this.score = score;
+        name  = entryName;
+        score = entryScore;
     }
 }
 

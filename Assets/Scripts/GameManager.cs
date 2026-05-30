@@ -4,6 +4,10 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using TMPro;
 
+/// <summary>
+/// Central game state manager. Handles lives, score, coins, time, UI panels,
+/// and multiplayer mode. Persists across scene loads.
+/// </summary>
 [DefaultExecutionOrder(-1)]
 public class GameManager : MonoBehaviour
 {
@@ -17,16 +21,15 @@ public class GameManager : MonoBehaviour
     public int score       { get; private set; } = 0;
     public int time        { get; set; }         = 150;
     public int PlayerCount { get; private set; } = 1;
-    public int redCoins   { get; private set; } = 0;
-    public int greenCoins { get; private set; } = 0;
+    public int redCoins    { get; private set; } = 0;
+    public int greenCoins  { get; private set; } = 0;
 
     // ==========================================
     // 2. PUBLIC FIELDS
     // ==========================================
     [Header("Co-op Spawning References")]
     public GameObject player2Prefab;
-
-    public Transform player2SpawnPoint;
+    public Transform  player2SpawnPoint;
 
     [Header("Co-op Objects")]
     public GameObject coopObjects;
@@ -37,12 +40,11 @@ public class GameManager : MonoBehaviour
     private bool _levelComplete = false;
     private bool _isFirstLaunch = true;
 
-    private GameObject _startPanel;
-    private GameObject _victoryPanel;
-    private GameObject _gameOverPanel;
-
+    private GameObject     _startPanel;
+    private GameObject     _victoryPanel;
+    private GameObject     _gameOverPanel;
     private TMP_InputField _nameInput;
-    private string _playerName = "";
+    private string         _playerName = "";
 
     // ==========================================
     // 4. CONSTANTS
@@ -93,46 +95,13 @@ public class GameManager : MonoBehaviour
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-{
-    _levelComplete = false;
-    FindPanels();
-
-    if (_isFirstLaunch)
-    {
-        Time.timeScale = 0f;
-        return;
-    }
-
-    Time.timeScale = 1f;
-    StartGameLogic();
-    RefreshCameraTargets();
-    StartCoroutine(ActivateCoopObjectsDelayed(PlayerCount == 2));
-}
-
-private IEnumerator ActivateCoopObjectsDelayed(bool isActive)
-{
-    yield return null; // чекаємо один кадр поки всі Awake спрацюють
-    ActivateCoopObjects(isActive);
-}
-
     // ==========================================
     // 6. PUBLIC METHODS
     // ==========================================
-    public void AddScore(int amount)
-    {
-        score += amount;
-    }
+    public void AddScore(int amount) => score += amount;
+    public void AddCoin()            => coins++;
+    public void AddLife()            => lives++;
 
-    public void AddCoin()
-    {
-        coins++;
-    }
-
-    public void AddLife()
-    {
-        lives++;
-    }
     public void AddRedCoin()
     {
         redCoins++;
@@ -144,6 +113,7 @@ private IEnumerator ActivateCoopObjectsDelayed(bool isActive)
         greenCoins++;
         coins++;
     }
+
     public void StartWinSequence()
     {
         _levelComplete = true;
@@ -195,24 +165,15 @@ private IEnumerator ActivateCoopObjectsDelayed(bool isActive)
         }
 
         lives--;
+        ResetRoundStats();
 
         if (lives > 0)
         {
-            coins = 0;
-            score = 0;
-            time  = DEFAULT_TIME;
-            redCoins   = 0; // ← додай
-            greenCoins = 0; // ← додай
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
         else
         {
             ShowGameOver();
-            coins = 0;
-            score = 0;
-            time  = DEFAULT_TIME;
-            redCoins   = 0; // ← додай
-            greenCoins = 0; // ← додай
         }
     }
 
@@ -249,13 +210,13 @@ private IEnumerator ActivateCoopObjectsDelayed(bool isActive)
 
     public void QuitGame()
     {
-        Debug.Log("Application quitting...");
         Application.Quit();
     }
 
     public void TriggerPlayerJump()
     {
         PlayerMovement player = FindAnyObjectByType<PlayerMovement>();
+
         if (player != null)
         {
             player.OnJumpButtonPressed();
@@ -265,12 +226,26 @@ private IEnumerator ActivateCoopObjectsDelayed(bool isActive)
     // ==========================================
     // 7. PRIVATE METHODS
     // ==========================================
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        _levelComplete = false;
+        FindPanels();
+
+        if (_isFirstLaunch)
+        {
+            Time.timeScale = 0f;
+            return;
+        }
+
+        Time.timeScale = 1f;
+        StartGameLogic();
+        RefreshCameraTargets();
+        StartCoroutine(ActivateCoopObjectsDelayed(PlayerCount == 2));
+    }
+
     private void StartGame(int playerCount)
     {
-        _playerName = ((_nameInput != null) && !string.IsNullOrWhiteSpace(_nameInput.text))
-            ? _nameInput.text.Trim()
-            : "Player";
-
+        _playerName = ResolvePlayerName();
         PlayerCount    = playerCount;
         _isFirstLaunch = false;
 
@@ -292,60 +267,56 @@ private IEnumerator ActivateCoopObjectsDelayed(bool isActive)
         RefreshCameraTargets();
     }
 
-private void ActivateCoopObjects(bool isActive)
-{
-    if (coopObjects == null)
+    private void ActivateCoopObjects(bool isActive)
     {
-        CoopObjectsRegistrar registrar = 
-            FindObjectsByType<CoopObjectsRegistrar>(
-                FindObjectsInactive.Include, 
-                FindObjectsSortMode.None
-            ).Length > 0 
-            ? FindObjectsByType<CoopObjectsRegistrar>(
-                FindObjectsInactive.Include, 
-                FindObjectsSortMode.None)[0] 
-            : null;
-
-        if (registrar != null)
+        if (coopObjects == null)
         {
-            coopObjects = registrar.gameObject;
+            CoopObjectsRegistrar[] registrars = FindObjectsByType<CoopObjectsRegistrar>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            if (registrars.Length > 0)
+            {
+                coopObjects = registrars[0].gameObject;
+            }
+        }
+
+        if (coopObjects != null)
+        {
+            coopObjects.SetActive(isActive);
         }
     }
 
-    if (coopObjects != null)
-    {
-        coopObjects.SetActive(isActive);
-    }
-}
-
     private void RefreshCameraTargets()
     {
-        CameraScrolling standardCam = Camera.main != null
+        CameraScrolling camera = Camera.main != null
             ? Camera.main.GetComponent<CameraScrolling>()
             : null;
 
-        if (standardCam == null)
+        if (camera == null)
         {
             return;
         }
 
-        PlayerMovement p1 = FindPlayerByIndex(1);
-        if (p1 != null)
+        PlayerMovement player1 = FindPlayerByIndex(1);
+
+        if (player1 != null)
         {
-            standardCam.player1 = p1.transform;
+            camera.player1 = player1.transform;
         }
 
         if (PlayerCount == 2)
         {
-            GameObject p2Object = SpawnPlayer2();
-            if (p2Object != null)
+            GameObject player2Object = SpawnPlayer2();
+
+            if (player2Object != null)
             {
-                standardCam.player2 = p2Object.transform;
+                camera.player2 = player2Object.transform;
             }
         }
         else
         {
-            standardCam.player2 = null;
+            camera.player2 = null;
         }
     }
 
@@ -353,65 +324,81 @@ private void ActivateCoopObjects(bool isActive)
     {
         if (player2Prefab == null)
         {
-            Debug.LogWarning("SpawnPlayer2: player2Prefab reference is missing in Inspector!");
+            Debug.LogWarning("GameManager: player2Prefab is not assigned in Inspector!");
             return null;
         }
 
-        PlayerMovement existingP2 = FindPlayerByIndex(2);
-        if (existingP2 != null)
+        PlayerMovement existingPlayer2 = FindPlayerByIndex(2);
+
+        if (existingPlayer2 != null)
         {
-            return existingP2.gameObject;
+            return existingPlayer2.gameObject;
         }
 
-        Vector3 spawnPos = Vector3.zero;
+        Vector3 spawnPosition = ResolvePlayer2SpawnPosition();
+
+        GameObject player2Object = Instantiate(player2Prefab, spawnPosition, Quaternion.identity);
+        player2Object.name = "Mario 2";
+
+        PlayerMovement movement = player2Object.GetComponent<PlayerMovement>();
+
+        if (movement != null)
+        {
+            movement.playerIndex = 2;
+        }
+
+        return player2Object;
+    }
+
+    private Vector3 ResolvePlayer2SpawnPosition()
+    {
         if (player2SpawnPoint != null)
         {
-            spawnPos = player2SpawnPoint.position;
+            return player2SpawnPoint.position;
         }
-        else
+
+        PlayerMovement player1 = FindPlayerByIndex(1);
+
+        if (player1 != null)
         {
-            PlayerMovement p1 = FindPlayerByIndex(1);
-            if (p1 != null)
-            {
-                spawnPos = p1.transform.position + Vector3.right * 1.5f;
-            }
+            return player1.transform.position + Vector3.right * 1.5f;
         }
 
-        GameObject p2 = Instantiate(player2Prefab, spawnPos, Quaternion.identity);
-        p2.name = "Mario 2";
-
-        PlayerMovement pm = p2.GetComponent<PlayerMovement>();
-        if (pm != null)
-        {
-            pm.playerIndex = 2;
-        }
-
-        return p2;
+        return Vector3.zero;
     }
 
     private PlayerMovement FindPlayerByIndex(int index)
     {
-        PlayerMovement[] allPlayers = FindObjectsByType<PlayerMovement>(FindObjectsInactive.Include);
-        foreach (PlayerMovement p in allPlayers)
+        PlayerMovement[] allPlayers = FindObjectsByType<PlayerMovement>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
+        foreach (PlayerMovement player in allPlayers)
         {
-            if (p != null && p.playerIndex == index)
+            if (player != null && player.playerIndex == index)
             {
-                return p;
+                return player;
             }
         }
+
         return null;
     }
 
     private void FindPanels()
+    {
+        FindUIObjects();
+        BindAllButtons();
+        ValidatePanels();
+    }
+
+    private void FindUIObjects()
     {
         _victoryPanel  = null;
         _gameOverPanel = null;
         _startPanel    = null;
         _nameInput     = null;
 
-        GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
-
-        foreach (GameObject go in allObjects)
+        foreach (GameObject go in Resources.FindObjectsOfTypeAll<GameObject>())
         {
             if (string.IsNullOrEmpty(go.scene.name))
             {
@@ -442,6 +429,14 @@ private void ActivateCoopObjects(bool isActive)
             }
         }
 
+        if (_startPanel != null)
+        {
+            _startPanel.SetActive(_isFirstLaunch);
+        }
+    }
+
+    private void BindAllButtons()
+    {
         if (_victoryPanel != null)
         {
             BindButton(_victoryPanel,  "ExitButton", GoToStart);
@@ -456,17 +451,23 @@ private void ActivateCoopObjects(bool isActive)
 
         if (_startPanel != null)
         {
-            _startPanel.SetActive(_isFirstLaunch);
             BindButton(_startPanel, "OnePlayerButton",  StartOnePlayerGame);
             BindButton(_startPanel, "TwoPlayersButton", StartTwoPlayerGame);
             BindButton(_startPanel, "ExitClickButton",  QuitGame);
         }
     }
 
+    private void ValidatePanels()
+    {
+        if (_victoryPanel  == null) Debug.LogWarning("GameManager: 'VictoryPanel' not found!");
+        if (_gameOverPanel == null) Debug.LogWarning("GameManager: 'GameOverPanel' not found!");
+        if (_startPanel    == null) Debug.LogWarning("GameManager: 'StartPanel' not found!");
+        if (_nameInput     == null) Debug.LogWarning("GameManager: TMP_InputField not found in StartPanel!");
+    }
+
     private void BindButton(GameObject panel, string namePart, UnityEngine.Events.UnityAction action)
     {
-        Button[] buttons = panel.GetComponentsInChildren<Button>(true);
-        foreach (Button btn in buttons)
+        foreach (Button btn in panel.GetComponentsInChildren<Button>(true))
         {
             if (btn.gameObject.name.IndexOf(namePart, System.StringComparison.OrdinalIgnoreCase) >= 0)
             {
@@ -520,15 +521,26 @@ private void ActivateCoopObjects(bool isActive)
         }
     }
 
+    private void ResetRoundStats()
+    {
+        coins      = 0;
+        score      = 0;
+        time       = DEFAULT_TIME;
+        redCoins   = 0;
+        greenCoins = 0;
+    }
+
     private void ResetStats()
     {
         _levelComplete = false;
-        lives = DEFAULT_LIVES;
-        coins = 0;
-        score = 0;
-        redCoins   = 0; // ← додай
-        greenCoins = 0; 
-        time  = DEFAULT_TIME;
+        lives          = DEFAULT_LIVES;
+        ResetRoundStats();
+    }
+
+    private string ResolvePlayerName()
+    {
+        bool hasValidInput = _nameInput != null && !string.IsNullOrWhiteSpace(_nameInput.text);
+        return hasValidInput ? _nameInput.text.Trim() : "Player";
     }
 
     // ==========================================
@@ -538,5 +550,11 @@ private void ActivateCoopObjects(bool isActive)
     {
         yield return new WaitForSeconds(delay);
         ResetLevel();
+    }
+
+    private IEnumerator ActivateCoopObjectsDelayed(bool isActive)
+    {
+        yield return null;
+        ActivateCoopObjects(isActive);
     }
 }
