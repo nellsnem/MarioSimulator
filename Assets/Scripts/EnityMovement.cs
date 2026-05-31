@@ -1,6 +1,5 @@
 using UnityEngine;
 
- 
 [RequireComponent(typeof(Rigidbody2D))]
 public class EntityMovement : MonoBehaviour
 {
@@ -8,14 +7,14 @@ public class EntityMovement : MonoBehaviour
     // 1. PUBLIC FIELDS
     // ==========================================
     [Header("Movement Settings")]
-    public float speed     = 1f;
+    public float   speed     = 1f;
     public Vector2 direction = Vector2.left;
 
     // ==========================================
     // 2. PRIVATE FIELDS
     // ==========================================
     private Rigidbody2D _rb;
-    private Vector2 _velocity;
+    private Vector2     _velocity;
 
     // ==========================================
     // 3. MONOBEHAVIOUR METHODS
@@ -24,6 +23,16 @@ public class EntityMovement : MonoBehaviour
     {
         _rb     = GetComponent<Rigidbody2D>();
         enabled = false;
+    }
+
+    private void OnEnable()
+    {
+        WakeUpBody();
+    }
+
+    private void OnDisable()
+    {
+        SleepBody();
     }
 
     private void OnBecameVisible()
@@ -36,17 +45,6 @@ public class EntityMovement : MonoBehaviour
         enabled = false;
     }
 
-    private void OnEnable()
-    {
-        _rb.WakeUp();
-    }
-
-    private void OnDisable()
-    {
-        _rb.linearVelocity = Vector2.zero;
-        _rb.Sleep();
-    }
-
     private void FixedUpdate()
     {
         ApplyMovement();
@@ -57,6 +55,17 @@ public class EntityMovement : MonoBehaviour
     // ==========================================
     // 4. PRIVATE METHODS
     // ==========================================
+    private void WakeUpBody()
+    {
+        _rb.WakeUp();
+    }
+
+    private void SleepBody()
+    {
+        _rb.linearVelocity = Vector2.zero;
+        _rb.Sleep();
+    }
+
     private void ApplyMovement()
     {
         _velocity.x  = direction.x * speed;

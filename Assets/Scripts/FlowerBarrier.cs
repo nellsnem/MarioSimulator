@@ -30,7 +30,6 @@ public class FlowerBarrier : MonoBehaviour
         _spriteRenderer = GetComponent<SpriteRenderer>();
         _collider       = GetComponent<Collider2D>();
 
-        // Встановлюємо початковий спрайт
         if (_spriteRenderer != null && spriteIdle != null)
         {
             _spriteRenderer.sprite = spriteIdle;
@@ -39,7 +38,6 @@ public class FlowerBarrier : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        // Якщо вже відкрита — не б'є
         if (_isOpen) return;
         if (!collision.gameObject.CompareTag("Player")) return;
 
@@ -65,23 +63,19 @@ public class FlowerBarrier : MonoBehaviour
     // ==========================================
     private IEnumerator OpenSequence()
     {
-        // Міняємо спрайт на "переможений"
         if (_spriteRenderer != null && spriteOpen != null)
         {
             _spriteRenderer.sprite = spriteOpen;
         }
 
-        // Чекаємо два кадри щоб поточна колізія завершилась
         yield return null;
         yield return null;
 
-        // Вимикаємо колайдер — більше не б'є
         if (_collider != null)
         {
             _collider.enabled = false;
         }
 
-        // Опускаємо квітку вниз
         Vector3 startPos  = transform.position;
         Vector3 targetPos = startPos + Vector3.down * dropDistance;
 
@@ -94,7 +88,6 @@ public class FlowerBarrier : MonoBehaviour
 
         transform.position = targetPos;
 
-        // Плавне зникнення
         float elapsed    = 0f;
         Color startColor = _spriteRenderer.color;
 
@@ -106,7 +99,6 @@ public class FlowerBarrier : MonoBehaviour
             yield return null;
         }
 
-        // Переносимо на задній план і робимо прохідною
         _spriteRenderer.sortingOrder = -1;
         _spriteRenderer.color        = new Color(1f, 1f, 1f, 0f);
     }

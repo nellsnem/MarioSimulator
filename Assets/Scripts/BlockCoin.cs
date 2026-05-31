@@ -1,33 +1,40 @@
 using System.Collections;
 using UnityEngine;
 
- 
 public class BlockCoin : MonoBehaviour
 {
     // ==========================================
     // 1. CONSTANTS
     // ==========================================
-    private const float COIN_RISE_HEIGHT    = 2f;
-    private const float COIN_ANIM_DURATION  = 0.25f;
+    private const float COIN_RISE_HEIGHT   = 2f;
+    private const float COIN_ANIM_DURATION = 0.25f;
+    private const int   COIN_SCORE         = 100;
 
     // ==========================================
     // 2. MONOBEHAVIOUR METHODS
     // ==========================================
     private void Start()
     {
+        RegisterCoin();
+        StartCoroutine(CoinAnimation());
+    }
+
+    // ==========================================
+    // 3. PRIVATE METHODS
+    // ==========================================
+    private void RegisterCoin()
+    {
         GameManager.Instance.AddCoin();
-        GameManager.Instance.AddScore(100);
+        GameManager.Instance.AddScore(COIN_SCORE);
 
         if (MusicManager.Instance != null)
         {
             MusicManager.Instance.PlayCoin();
         }
-
-        StartCoroutine(CoinAnimation());
     }
 
     // ==========================================
-    // 3. COROUTINES
+    // 4. COROUTINES
     // ==========================================
     private IEnumerator CoinAnimation()
     {
@@ -46,9 +53,9 @@ public class BlockCoin : MonoBehaviour
 
         while (timeElapsed < COIN_ANIM_DURATION)
         {
-            float progress = timeElapsed / COIN_ANIM_DURATION;
+            float progress          = timeElapsed / COIN_ANIM_DURATION;
             transform.localPosition = Vector3.Lerp(from, to, progress);
-            timeElapsed += Time.deltaTime;
+            timeElapsed            += Time.deltaTime;
             yield return null;
         }
     }

@@ -2,15 +2,23 @@ using UnityEngine;
 
 public class CoopObjectsRegistrar : MonoBehaviour
 {
-    private void OnEnable()
+    // ==========================================
+    // 1. MONOBEHAVIOUR METHODS
+    // ==========================================
+    private void Awake()
     {
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.coopObjects = gameObject;
-        }
+        RegisterSelf();
     }
 
-    private void Awake()
+    private void OnEnable()
+    {
+        RegisterSelf();
+    }
+
+    // ==========================================
+    // 2. PRIVATE METHODS
+    // ==========================================
+    private void RegisterSelf()
     {
         if (GameManager.Instance != null)
         {

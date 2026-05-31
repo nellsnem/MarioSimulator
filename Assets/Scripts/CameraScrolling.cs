@@ -25,12 +25,7 @@ public class CameraScrolling : MonoBehaviour
     // ==========================================
     private void Start()
     {
-        Camera cam = GetComponent<Camera>();
-        if (cam != null)
-        {
-            // Ширина екрана у world units
-            _halfScreenWidth = cam.orthographicSize * cam.aspect;
-        }
+        InitScreenWidth();
     }
 
     private void LateUpdate()
@@ -41,9 +36,21 @@ public class CameraScrolling : MonoBehaviour
     // ==========================================
     // 4. PRIVATE METHODS
     // ==========================================
+    private void InitScreenWidth()
+    {
+        Camera cam = GetComponent<Camera>();
+        if (cam != null)
+        {
+            _halfScreenWidth = cam.orthographicSize * cam.aspect;
+        }
+    }
+
     private void FollowPlayers()
     {
-        if (player1 == null) return;
+        if (player1 == null)
+        {
+            return;
+        }
 
         Vector3 cameraPos = transform.position;
         float targetX     = cameraPos.x;
@@ -56,15 +63,7 @@ public class CameraScrolling : MonoBehaviour
         }
         else
         {
-            float p1X = player1.position.x;
-            float p2X = player2.position.x;
-
-            float laggingX = Mathf.Min(p1X, p2X);
-            float leadingX = Mathf.Max(p1X, p2X);
-
-            float lookahead = Mathf.Min(leadingX - laggingX, maxPlayerDistance) * lookAheadFactor;
-            targetX = laggingX + lookahead;
-
+            targetX = CalculateCoopTargetX();
         }
 
         if (targetX > cameraPos.x)
@@ -73,5 +72,17 @@ public class CameraScrolling : MonoBehaviour
         }
 
         transform.position = cameraPos;
+    }
+
+    private float CalculateCoopTargetX()
+    {
+        float p1X = player1.position.x;
+        float p2X = player2.position.x;
+
+        float laggingX  = Mathf.Min(p1X, p2X);
+        float leadingX  = Mathf.Max(p1X, p2X);
+        float lookahead = Mathf.Min(leadingX - laggingX, maxPlayerDistance) * lookAheadFactor;
+
+        return laggingX + lookahead;
     }
 }

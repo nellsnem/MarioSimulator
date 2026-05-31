@@ -17,7 +17,7 @@ public class GroundCoin : MonoBehaviour
     // ==========================================
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (_isCollected) return; // ← зупиняє повторний збір
+        if (_isCollected) return; 
         if (!other.CompareTag("Player")) return;
 
         PlayerMovement player = other.GetComponent<PlayerMovement>();
@@ -41,7 +41,7 @@ public class GroundCoin : MonoBehaviour
 
     private void Collect()
     {
-        _isCollected = true; // ← одразу блокуємо повторний виклик
+        _isCollected = true; 
 
         if (CompareTag("RedCoin"))
         {

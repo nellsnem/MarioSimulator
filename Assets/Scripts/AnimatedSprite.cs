@@ -1,6 +1,5 @@
 using UnityEngine;
 
- 
 [RequireComponent(typeof(SpriteRenderer))]
 public class AnimatedSprite : MonoBehaviour
 {
@@ -9,13 +8,13 @@ public class AnimatedSprite : MonoBehaviour
     // ==========================================
     [Header("Animation Settings")]
     public Sprite[] sprites;
-    public float framerate = 0.16f;
+    public float    framerate = 0.16f;
 
     // ==========================================
     // 2. PRIVATE FIELDS
     // ==========================================
     private SpriteRenderer _spriteRenderer;
-    private int _frame;
+    private int            _frame;
 
     // ==========================================
     // 3. MONOBEHAVIOUR METHODS
@@ -27,17 +26,27 @@ public class AnimatedSprite : MonoBehaviour
 
     private void OnEnable()
     {
-        InvokeRepeating(nameof(Animate), framerate, framerate);
+        StartAnimation();
     }
 
     private void OnDisable()
     {
-        CancelInvoke();
+        StopAnimation();
     }
 
     // ==========================================
     // 4. PRIVATE METHODS
     // ==========================================
+    private void StartAnimation()
+    {
+        InvokeRepeating(nameof(Animate), framerate, framerate);
+    }
+
+    private void StopAnimation()
+    {
+        CancelInvoke();
+    }
+
     private void Animate()
     {
         _frame++;

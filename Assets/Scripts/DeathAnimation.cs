@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
 
- 
 public class DeathAnimation : MonoBehaviour
 {
     // ==========================================
@@ -17,9 +16,9 @@ public class DeathAnimation : MonoBehaviour
     // ==========================================
     // 3. CONSTANTS
     // ==========================================
-    private const float DEATH_DURATION     = 3f;
-    private const float DEATH_JUMP_SPEED   = 8f;
-    private const float DEATH_GRAVITY      = -30f;
+    private const float DEATH_DURATION      = 3f;
+    private const float DEATH_JUMP_SPEED    = 8f;
+    private const float DEATH_GRAVITY       = -30f;
     private const int   DEATH_SORTING_ORDER = 20;
 
     // ==========================================
@@ -32,6 +31,21 @@ public class DeathAnimation : MonoBehaviour
 
     private void OnEnable()
     {
+        PlayDeathAnimation();
+    }
+
+    // ==========================================
+    // 5. PRIVATE METHODS
+    // ==========================================
+    private void PlayDeathAnimation()
+    {
+        SetupSprite();
+        DisablePhysics();
+        StartCoroutine(Animate());
+    }
+
+    private void SetupSprite()
+    {
         _spriteRenderer.enabled      = true;
         _spriteRenderer.sortingOrder = DEATH_SORTING_ORDER;
 
@@ -39,14 +53,8 @@ public class DeathAnimation : MonoBehaviour
         {
             _spriteRenderer.sprite = deadSprite;
         }
-
-        DisablePhysics();
-        StartCoroutine(Animate());
     }
 
-    // ==========================================
-    // 5. PRIVATE METHODS
-    // ==========================================
     private void DisablePhysics()
     {
         foreach (Collider2D col in GetComponents<Collider2D>())
@@ -80,7 +88,7 @@ public class DeathAnimation : MonoBehaviour
     // ==========================================
     private IEnumerator Animate()
     {
-        float elapsed  = 0f;
+        float elapsed    = 0f;
         Vector3 velocity = Vector3.up * DEATH_JUMP_SPEED;
 
         while (elapsed < DEATH_DURATION)

@@ -4,10 +4,7 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using TMPro;
 
-/// <summary>
-/// Central game state manager. Handles lives, score, coins, time, UI panels,
-/// and multiplayer mode. Persists across scene loads.
-/// </summary>
+
 [DefaultExecutionOrder(-1)]
 public class GameManager : MonoBehaviour
 {

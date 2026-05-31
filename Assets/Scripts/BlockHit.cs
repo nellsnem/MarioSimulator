@@ -1,19 +1,20 @@
 using System.Collections;
 using UnityEngine;
- 
+
 public class BlockHit : MonoBehaviour
 {
     // ==========================================
     // 1. PUBLIC FIELDS
     // ==========================================
     public GameObject item;
-    public Sprite emptyBlock;
-    public int maxHits = 1;
+    public Sprite     emptyBlock;
+    public int        maxHits = 1;
 
     // ==========================================
     // 2. PRIVATE FIELDS
     // ==========================================
-    private bool _animating;
+    private bool           _isAnimating;
+    private SpriteRenderer _spriteRenderer;
 
     // ==========================================
     // 3. CONSTANTS
@@ -24,9 +25,14 @@ public class BlockHit : MonoBehaviour
     // ==========================================
     // 4. MONOBEHAVIOUR METHODS
     // ==========================================
+    private void Awake()
+    {
+        _spriteRenderer = GetComponent<SpriteRenderer>();
+    }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (_animating || maxHits == 0 || !collision.gameObject.CompareTag("Player"))
+        if (_isAnimating || maxHits == 0 || !collision.gameObject.CompareTag("Player"))
         {
             return;
         }
@@ -42,22 +48,29 @@ public class BlockHit : MonoBehaviour
     // ==========================================
     private void Hit()
     {
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-        spriteRenderer.enabled = true;
+        _spriteRenderer.enabled = true;
 
         maxHits--;
 
+        UpdateBlockSprite();
+        SpawnItem();
+        StartCoroutine(Animate());
+    }
+
+    private void UpdateBlockSprite()
+    {
         if (maxHits == 0)
         {
-            spriteRenderer.sprite = emptyBlock;
+            _spriteRenderer.sprite = emptyBlock;
         }
+    }
 
+    private void SpawnItem()
+    {
         if (item != null)
         {
             Instantiate(item, transform.position, Quaternion.identity);
         }
-
-        StartCoroutine(Animate());
     }
 
     // ==========================================
@@ -65,7 +78,7 @@ public class BlockHit : MonoBehaviour
     // ==========================================
     private IEnumerator Animate()
     {
-        _animating = true;
+        _isAnimating = true;
 
         Vector3 restingPosition  = transform.localPosition;
         Vector3 animatedPosition = restingPosition + Vector3.up * HIT_ANIM_HEIGHT;
@@ -73,7 +86,7 @@ public class BlockHit : MonoBehaviour
         yield return Move(restingPosition, animatedPosition);
         yield return Move(animatedPosition, restingPosition);
 
-        _animating = false;
+        _isAnimating = false;
     }
 
     private IEnumerator Move(Vector3 from, Vector3 to)
@@ -82,9 +95,9 @@ public class BlockHit : MonoBehaviour
 
         while (elapsed < HIT_ANIM_DURATION)
         {
-            float progress = elapsed / HIT_ANIM_DURATION;
+            float progress          = elapsed / HIT_ANIM_DURATION;
             transform.localPosition = Vector3.Lerp(from, to, progress);
-            elapsed += Time.deltaTime;
+            elapsed                += Time.deltaTime;
             yield return null;
         }
 
