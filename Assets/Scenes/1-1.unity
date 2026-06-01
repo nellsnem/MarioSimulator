@@ -221,9 +221,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd0a13881c882af4897a010cb42f281a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  player2Prefab: {fileID: 3941670472640698253, guid: 6b877b7f4f82f0c4a8382d900db3f140, type: 3}
-  player2SpawnPoint: {fileID: 1135319977}
-  coopObjects: {fileID: 1128569933}
+  Player2Prefab: {fileID: 3941670472640698253, guid: 6b877b7f4f82f0c4a8382d900db3f140, type: 3}
+  Player2SpawnPoint: {fileID: 1135319977}
+  CoopObjects: {fileID: 1128569933}
 --- !u!4 &42165296
 Transform:
   m_ObjectHideFlags: 0
