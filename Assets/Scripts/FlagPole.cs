@@ -101,9 +101,9 @@ public class FlagPole : MonoBehaviour
         player.gameObject.SetActive(false);
 
         yield return new WaitForSeconds(0.5f);
-        while (GameManager.Instance != null && GameManager.Instance.time > 0)
+        while (GameManager.Instance != null && GameManager.Instance.GameTime  > 0)
         {
-            GameManager.Instance.time--;
+            GameManager.Instance.GameTime --;
             GameManager.Instance.AddScore(50);
             yield return new WaitForSeconds(0.01f);
         }

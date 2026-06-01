@@ -4,38 +4,34 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using TMPro;
 
-
 [DefaultExecutionOrder(-1)]
 public class GameManager : MonoBehaviour
 {
     // ==========================================
-    // 1. PUBLIC PROPERTIES
+    // 1. PUBLIC FIELDS
     // ==========================================
     public static GameManager Instance { get; private set; }
 
-    public int lives       { get; private set; } = 3;
-    public int coins       { get; private set; } = 0;
-    public int score       { get; private set; } = 0;
-    public int time        { get; set; }         = 150;
+    public int Lives       { get; private set; } = DefaultLives;
+    public int Coins       { get; private set; } = 0;
+    public int Score       { get; private set; } = 0;
+    public int GameTime    { get; set; }         = DefaultTime;
     public int PlayerCount { get; private set; } = 1;
-    public int redCoins    { get; private set; } = 0;
-    public int greenCoins  { get; private set; } = 0;
+    public int RedCoins    { get; private set; } = 0;
+    public int GreenCoins  { get; private set; } = 0;
 
-    // ==========================================
-    // 2. PUBLIC FIELDS
-    // ==========================================
     [Header("Co-op Spawning References")]
-    public GameObject player2Prefab;
-    public Transform  player2SpawnPoint;
+    public GameObject Player2Prefab;
+    public Transform  Player2SpawnPoint;
 
     [Header("Co-op Objects")]
-    public GameObject coopObjects;
+    public GameObject CoopObjects;
 
     // ==========================================
-    // 3. PRIVATE FIELDS
+    // 2. PRIVATE FIELDS
     // ==========================================
-    private bool _levelComplete = false;
-    private bool _isFirstLaunch = true;
+    private bool _isLevelComplete = false;
+    private bool _isFirstLaunch   = true;
 
     private GameObject     _startPanel;
     private GameObject     _victoryPanel;
@@ -44,14 +40,14 @@ public class GameManager : MonoBehaviour
     private string         _playerName = "";
 
     // ==========================================
-    // 4. CONSTANTS
+    // 3. CONSTANTS
     // ==========================================
-    private const int DEFAULT_LIVES   = 3;
-    private const int DEFAULT_TIME    = 150;
-    private const int NAME_CHAR_LIMIT = 5;
+    private const int DefaultLives    = 3;
+    private const int DefaultTime     = 150;
+    private const int NameCharLimit   = 5;
 
     // ==========================================
-    // 5. MONOBEHAVIOUR METHODS
+    // 4. MONOBEHAVIOUR METHODS
     // ==========================================
     private void Awake()
     {
@@ -70,16 +66,7 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.DeleteAll();
         Application.targetFrameRate = 60;
         FindPanels();
-
-        if (_isFirstLaunch)
-        {
-            Time.timeScale = 0f;
-        }
-        else
-        {
-            Time.timeScale = 1f;
-            StartGameLogic();
-        }
+        ApplyFirstLaunchTimeScale();
     }
 
     private void OnEnable()
@@ -93,43 +80,35 @@ public class GameManager : MonoBehaviour
     }
 
     // ==========================================
-    // 6. PUBLIC METHODS
+    // 5. PUBLIC METHODS
     // ==========================================
-    public void AddScore(int amount) => score += amount;
-    public void AddCoin()            => coins++;
-    public void AddLife()            => lives++;
+    public void AddScore(int amount) => Score += amount;
+    public void AddCoin()            => Coins++;
+    public void AddLife()            => Lives++;
 
     public void AddRedCoin()
     {
-        redCoins++;
-        coins++;
+        RedCoins++;
+        Coins++;
     }
 
     public void AddGreenCoin()
     {
-        greenCoins++;
-        coins++;
+        GreenCoins++;
+        Coins++;
     }
 
     public void StartWinSequence()
     {
-        _levelComplete = true;
+        _isLevelComplete = true;
         CancelInvoke(nameof(TickTime));
     }
 
     public void ShowVictoryUI()
     {
-        Time.timeScale = 0f;
-
-        if (MusicManager.Instance != null)
-        {
-            MusicManager.Instance.PlayVictory();
-        }
-
-        if (LeaderboardManager.Instance != null)
-        {
-            LeaderboardManager.Instance.SaveScore(_playerName, score);
-        }
+        UnityEngine.Time.timeScale = 0f;
+        MusicManager.Instance?.PlayVictory();
+        LeaderboardManager.Instance?.SaveScore(_playerName, Score);
 
         if (_victoryPanel != null)
         {
@@ -145,7 +124,7 @@ public class GameManager : MonoBehaviour
 
     public void ResetLevel(float delay)
     {
-        if (_levelComplete)
+        if (_isLevelComplete)
         {
             return;
         }
@@ -156,15 +135,15 @@ public class GameManager : MonoBehaviour
 
     public void ResetLevel()
     {
-        if (_levelComplete)
+        if (_isLevelComplete)
         {
             return;
         }
 
-        lives--;
+        Lives--;
         ResetRoundStats();
 
-        if (lives > 0)
+        if (Lives > 0)
         {
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
@@ -187,7 +166,7 @@ public class GameManager : MonoBehaviour
     public void RestartGame()
     {
         ResetStats();
-        Time.timeScale = 1f;
+        UnityEngine.Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
@@ -200,8 +179,8 @@ public class GameManager : MonoBehaviour
     {
         CancelInvoke(nameof(TickTime));
         ResetStats();
-        _isFirstLaunch = true;
-        Time.timeScale  = 0f;
+        _isFirstLaunch             = true;
+        UnityEngine.Time.timeScale = 0f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
@@ -210,106 +189,108 @@ public class GameManager : MonoBehaviour
         Application.Quit();
     }
 
-    public void TriggerPlayerJump()
-    {
-        PlayerMovement player = FindAnyObjectByType<PlayerMovement>();
-
-        if (player != null)
-        {
-            player.OnJumpButtonPressed();
-        }
-    }
-
     // ==========================================
-    // 7. PRIVATE METHODS
+    // 6. PRIVATE METHODS
     // ==========================================
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        _levelComplete = false;
+        _isLevelComplete = false;
         FindPanels();
 
         if (_isFirstLaunch)
         {
-            Time.timeScale = 0f;
+            UnityEngine.Time.timeScale = 0f;
             return;
         }
 
-        Time.timeScale = 1f;
+        UnityEngine.Time.timeScale = 1f;
         StartGameLogic();
         RefreshCameraTargets();
         StartCoroutine(ActivateCoopObjectsDelayed(PlayerCount == 2));
     }
 
+    private void ApplyFirstLaunchTimeScale()
+    {
+        UnityEngine.Time.timeScale = _isFirstLaunch ? 0f : 1f;
+
+        if (!_isFirstLaunch)
+        {
+            StartGameLogic();
+        }
+    }
+
     private void StartGame(int playerCount)
     {
-        _playerName = ResolvePlayerName();
+        _playerName    = ResolvePlayerName();
         PlayerCount    = playerCount;
         _isFirstLaunch = false;
 
-        PlayerPrefs.SetInt("PlayerCount", PlayerCount);
-        PlayerPrefs.SetString("PlayerName", _playerName);
-        PlayerPrefs.Save();
-
+        SavePlayerPrefs();
         ResetStats();
-
-        if (_startPanel != null)
-        {
-            _startPanel.SetActive(false);
-        }
-
+        HideStartPanel();
         ActivateCoopObjects(playerCount == 2);
 
-        Time.timeScale = 1f;
+        UnityEngine.Time.timeScale = 1f;
         StartGameLogic();
         RefreshCameraTargets();
     }
 
+    private void SavePlayerPrefs()
+    {
+        PlayerPrefs.SetInt("PlayerCount", PlayerCount);
+        PlayerPrefs.SetString("PlayerName", _playerName);
+        PlayerPrefs.Save();
+    }
+
+    private void HideStartPanel()
+    {
+        if (_startPanel != null)
+        {
+            _startPanel.SetActive(false);
+        }
+    }
+
     private void ActivateCoopObjects(bool isActive)
     {
-        if (coopObjects == null)
-        {
-            CoopObjectsRegistrar[] registrars = FindObjectsByType<CoopObjectsRegistrar>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+        ResolveCoopObjects();
 
-            if (registrars.Length > 0)
-            {
-                coopObjects = registrars[0].gameObject;
-            }
+        if (CoopObjects != null)
+        {
+            CoopObjects.SetActive(isActive);
+        }
+    }
+
+    private void ResolveCoopObjects()
+    {
+        if (CoopObjects != null)
+        {
+            return;
         }
 
-        if (coopObjects != null)
+        CoopObjectsRegistrar[] registrars = FindObjectsByType<CoopObjectsRegistrar>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
+        if (registrars.Length > 0)
         {
-            coopObjects.SetActive(isActive);
+            CoopObjects = registrars[0].gameObject;
         }
     }
 
     private void RefreshCameraTargets()
     {
-        CameraScrolling camera = Camera.main != null
-            ? Camera.main.GetComponent<CameraScrolling>()
-            : null;
+        CameraScrolling camera = ResolveCameraScrolling();
 
         if (camera == null)
         {
             return;
         }
 
-        PlayerMovement player1 = FindPlayerByIndex(1);
-
-        if (player1 != null)
-        {
-            camera.player1 = player1.transform;
-        }
+        AssignPlayer1Camera(camera);
 
         if (PlayerCount == 2)
         {
-            GameObject player2Object = SpawnPlayer2();
-
-            if (player2Object != null)
-            {
-                camera.player2 = player2Object.transform;
-            }
+            AssignPlayer2Camera(camera);
         }
         else
         {
@@ -317,11 +298,36 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private CameraScrolling ResolveCameraScrolling()
+    {
+        return Camera.main != null ? Camera.main.GetComponent<CameraScrolling>() : null;
+    }
+
+    private void AssignPlayer1Camera(CameraScrolling camera)
+    {
+        PlayerMovement player1 = FindPlayerByIndex(1);
+
+        if (player1 != null)
+        {
+            camera.player1 = player1.transform;
+        }
+    }
+
+    private void AssignPlayer2Camera(CameraScrolling camera)
+    {
+        GameObject player2Object = SpawnPlayer2();
+
+        if (player2Object != null)
+        {
+            camera.player2 = player2Object.transform;
+        }
+    }
+
     private GameObject SpawnPlayer2()
     {
-        if (player2Prefab == null)
+        if (Player2Prefab == null)
         {
-            Debug.LogWarning("GameManager: player2Prefab is not assigned in Inspector!");
+            Debug.LogWarning("GameManager: Player2Prefab is not assigned in Inspector!");
             return null;
         }
 
@@ -332,9 +338,13 @@ public class GameManager : MonoBehaviour
             return existingPlayer2.gameObject;
         }
 
-        Vector3 spawnPosition = ResolvePlayer2SpawnPosition();
+        return InstantiatePlayer2();
+    }
 
-        GameObject player2Object = Instantiate(player2Prefab, spawnPosition, Quaternion.identity);
+    private GameObject InstantiatePlayer2()
+    {
+        Vector3    spawnPosition = ResolvePlayer2SpawnPosition();
+        GameObject player2Object = Instantiate(Player2Prefab, spawnPosition, Quaternion.identity);
         player2Object.name = "Mario 2";
 
         PlayerMovement movement = player2Object.GetComponent<PlayerMovement>();
@@ -349,9 +359,9 @@ public class GameManager : MonoBehaviour
 
     private Vector3 ResolvePlayer2SpawnPosition()
     {
-        if (player2SpawnPoint != null)
+        if (Player2SpawnPoint != null)
         {
-            return player2SpawnPoint.position;
+            return Player2SpawnPoint.position;
         }
 
         PlayerMovement player1 = FindPlayerByIndex(1);
@@ -397,38 +407,49 @@ public class GameManager : MonoBehaviour
 
         foreach (GameObject go in Resources.FindObjectsOfTypeAll<GameObject>())
         {
-            if (string.IsNullOrEmpty(go.scene.name))
+            if (!IsSceneObject(go))
             {
                 continue;
             }
 
-            if (go.scene.name == "DontDestroyOnLoad")
-            {
-                continue;
-            }
-
-            switch (go.name)
-            {
-                case "VictoryPanel":
-                    _victoryPanel = go;
-                    break;
-                case "GameOverPanel":
-                    _gameOverPanel = go;
-                    break;
-                case "StartPanel":
-                    _startPanel = go;
-                    _nameInput  = go.GetComponentInChildren<TMP_InputField>(true);
-                    if (_nameInput != null)
-                    {
-                        _nameInput.characterLimit = NAME_CHAR_LIMIT;
-                    }
-                    break;
-            }
+            CacheUIPanel(go);
         }
 
         if (_startPanel != null)
         {
             _startPanel.SetActive(_isFirstLaunch);
+        }
+    }
+
+    private bool IsSceneObject(GameObject go)
+    {
+        return !string.IsNullOrEmpty(go.scene.name) && go.scene.name != "DontDestroyOnLoad";
+    }
+
+    private void CacheUIPanel(GameObject go)
+    {
+        switch (go.name)
+        {
+            case "VictoryPanel":
+                _victoryPanel = go;
+                break;
+            case "GameOverPanel":
+                _gameOverPanel = go;
+                break;
+            case "StartPanel":
+                CacheStartPanel(go);
+                break;
+        }
+    }
+
+    private void CacheStartPanel(GameObject go)
+    {
+        _startPanel = go;
+        _nameInput  = go.GetComponentInChildren<TMP_InputField>(true);
+
+        if (_nameInput != null)
+        {
+            _nameInput.characterLimit = NameCharLimit;
         }
     }
 
@@ -456,10 +477,22 @@ public class GameManager : MonoBehaviour
 
     private void ValidatePanels()
     {
-        if (_victoryPanel  == null) Debug.LogWarning("GameManager: 'VictoryPanel' not found!");
-        if (_gameOverPanel == null) Debug.LogWarning("GameManager: 'GameOverPanel' not found!");
-        if (_startPanel    == null) Debug.LogWarning("GameManager: 'StartPanel' not found!");
-        if (_nameInput     == null) Debug.LogWarning("GameManager: TMP_InputField not found in StartPanel!");
+        if (_victoryPanel == null)
+        {
+            Debug.LogWarning("GameManager: 'VictoryPanel' not found!");
+        }
+        if (_gameOverPanel == null)
+        {
+            Debug.LogWarning("GameManager: 'GameOverPanel' not found!");
+        } 
+        if (_startPanel == null)
+        {
+            Debug.LogWarning("GameManager: 'StartPanel' not found!");
+        } 
+        if (_nameInput == null)
+        {
+            Debug.LogWarning("GameManager: TMP_InputField not found in StartPanel!");
+        } 
     }
 
     private void BindButton(GameObject panel, string namePart, UnityEngine.Events.UnityAction action)
@@ -482,14 +515,14 @@ public class GameManager : MonoBehaviour
 
     private void TickTime()
     {
-        if (_levelComplete)
+        if (_isLevelComplete)
         {
             return;
         }
 
-        if (time > 0)
+        if (GameTime  > 0)
         {
-            time--;
+            GameTime --;
         }
         else
         {
@@ -500,17 +533,10 @@ public class GameManager : MonoBehaviour
     private void ShowGameOver()
     {
         CancelInvoke(nameof(TickTime));
-        Time.timeScale = 0f;
+        UnityEngine.Time.timeScale = 0f;
 
-        if (MusicManager.Instance != null)
-        {
-            MusicManager.Instance.PlayDeath();
-        }
-
-        if (LeaderboardManager.Instance != null)
-        {
-            LeaderboardManager.Instance.SaveScore(_playerName, score);
-        }
+        MusicManager.Instance?.PlayDeath();
+        LeaderboardManager.Instance?.SaveScore(_playerName, Score);
 
         if (_gameOverPanel != null)
         {
@@ -520,17 +546,17 @@ public class GameManager : MonoBehaviour
 
     private void ResetRoundStats()
     {
-        coins      = 0;
-        score      = 0;
-        time       = DEFAULT_TIME;
-        redCoins   = 0;
-        greenCoins = 0;
+        Coins      = 0;
+        Score      = 0;
+        GameTime    = DefaultTime;
+        RedCoins   = 0;
+        GreenCoins = 0;
     }
 
     private void ResetStats()
     {
-        _levelComplete = false;
-        lives          = DEFAULT_LIVES;
+        _isLevelComplete = false;
+        Lives            = DefaultLives;
         ResetRoundStats();
     }
 
@@ -541,7 +567,7 @@ public class GameManager : MonoBehaviour
     }
 
     // ==========================================
-    // 8. COROUTINES
+    // 7. COROUTINES
     // ==========================================
     private IEnumerator ResetAfterDelay(float delay)
     {

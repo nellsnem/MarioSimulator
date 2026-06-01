@@ -22,7 +22,7 @@ public class CoopObjectsRegistrar : MonoBehaviour
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.coopObjects = gameObject;
+            GameManager.Instance.CoopObjects = gameObject;
         }
     }
 }

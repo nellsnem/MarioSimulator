@@ -1,6 +1,5 @@
 using UnityEngine;
 
- 
 public class PowerUp : MonoBehaviour
 {
     // ==========================================
@@ -77,33 +76,25 @@ public class PowerUp : MonoBehaviour
 
     private void CollectCoin()
     {
-        GameManager.Instance.AddCoin();
+        GameManager.Instance?.AddCoin();
     }
 
     private void CollectExtraLife()
     {
-        GameManager.Instance.AddLife();
-
-        if (MusicManager.Instance != null)
-        {
-            MusicManager.Instance.PlayLife();
-        }
+        GameManager.Instance?.AddLife();
+        MusicManager.Instance?.PlayLife();
     }
 
     private void CollectMushroom(PlayerMovement player)
     {
-        GameManager.Instance.AddScore(150);
+        GameManager.Instance?.AddScore(150);
         player.Grow();
-
-        if (MusicManager.Instance != null)
-        {
-            MusicManager.Instance.PlayGrow();
-        }
+        MusicManager.Instance?.PlayGrow();
     }
 
     private void CollectStarpower(PlayerMovement player)
     {
-        GameManager.Instance.AddScore(500);
+        GameManager.Instance?.AddScore(500);
         player.Starpower();
     }
 }

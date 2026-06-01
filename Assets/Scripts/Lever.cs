@@ -67,12 +67,12 @@ public class Lever : MonoBehaviour
 	{
 		if (coinTag == "RedCoin")
 		{
-			return GameManager.Instance.redCoins >= requiredCoins;
+			return GameManager.Instance.RedCoins >= requiredCoins;
 		}
 
 		if (coinTag == "GreenCoin")
 		{
-			return GameManager.Instance.greenCoins >= requiredCoins;
+			return GameManager.Instance.GreenCoins >= requiredCoins;
 		}
 
 		return false;
